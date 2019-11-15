@@ -29,9 +29,7 @@ npm install tydom-client
 
 #### Simple example
 
-You can use the provided factory function to quickly get a working logger.
-
-Will use debounced writes to InfluxDB by default (with `BufferedInfluxDB`).
+You can use the provided factory function to quickly get a working client
 
 ```js
 import {createClient} from 'tydom-client';
