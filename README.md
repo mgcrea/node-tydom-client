@@ -1,4 +1,4 @@
-# Node.js Influx Syslog
+# Node.js Tydom Client
 
 [![npm version](https://img.shields.io/npm/v/tydom-client.svg)](https://github.com/mgcrea/node-tydom-client/releases)
 [![license](https://img.shields.io/github/license/mgcrea/node-tydom-client.svg?style=flat)](https://tldrlegal.com/license/mit-license)
@@ -7,7 +7,7 @@
 [![devDependencies status](https://david-dm.org/mgcrea/node-tydom-client/dev-status.svg)](https://david-dm.org/mgcrea/node-tydom-client?type=dev)
 [![coverage](https://codecov.io/gh/mgcrea/node-tydom-client/branch/master/graph/badge.svg)](https://codecov.io/gh/mgcrea/node-tydom-client)
 
-Easily manage [Tydom hardware](https://www.deltadore.fr/domotique/pilotage-maison-connectee/box-domotique/tydom-2-0-ref-6414118) from [Delta Dore](https://www.deltadore.fr/) from [Node.js](https://nodejs.org/en/).
+Easily manage [Tydom hardware](https://www.deltadore.fr/domotique/pilotage-maison-connectee/box-domotique/tydom-2-0-ref-6414118) by [Delta Dore](https://www.deltadore.fr/) from [Node.js](https://nodejs.org/en/).
 
 Originally built to enable bridging accessories to [Apple HomeKit](https://www.apple.com/ios/home/).
 
