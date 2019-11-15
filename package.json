@@ -1,5 +1,5 @@
 {
-  "name": "tydom-api",
+  "name": "tydom-client",
   "version": "0.2.0",
   "description": "Easily manage Tydom hardware by Delta Dore from Node.js",
   "main": "lib/index.js",
