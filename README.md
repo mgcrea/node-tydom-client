@@ -32,7 +32,8 @@ npm install tydom-client
 You can use the provided factory function to quickly get a working client
 
 ```js
-// Required when testing against a local Tydom hardware to fix "reason: self signed certificate" request errors
+// Required when testing against a local Tydom hardware
+// to fix "self signed certificate" errors
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 import {createClient} from 'tydom-client';
