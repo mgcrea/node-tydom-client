@@ -45,8 +45,16 @@ const client = createClient({username, password, hostname});
 (async () => {
   console.log(`Connecting to "${hostname}"...`);
   const socket = await client.connect();
+  // Get Tydom info
   const info = await client.get('/info');
   console.dir({info});
+  // Turn a light on
+  await client.put(`/devices/${MY_DEVICE_ID}/endpoints/${MY_DEVICE_ID}/data`, [
+    {
+      name: 'level',
+      value: 100
+    }
+  ]);
 })();
 ```
 
