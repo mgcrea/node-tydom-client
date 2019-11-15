@@ -6,7 +6,7 @@ node_js:
 
 env:
   global:
-    - CODECOV_TOKEN=84a6acca-26dd-47d0-a16d-93f7aa6fd9dd
+    - CODECOV_TOKEN=67444dc5-229d-400b-9295-169b1decd80d
 
 before_script:
   - date --rfc-2822
