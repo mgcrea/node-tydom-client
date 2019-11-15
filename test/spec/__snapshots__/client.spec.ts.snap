@@ -1,0 +1,18 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`client should properly create a client 1`] = `
+TydomClient {
+  "_events": Object {},
+  "_eventsCount": 0,
+  "_maxListeners": undefined,
+  "config": Object {
+    "hostname": "mediation.tydom.com",
+    "password": "MyPassw0rd!",
+    "userAgent": "Tydom/192 CFNetwork/1120 Darwin/19.0.0",
+    "username": "001A25123456",
+  },
+  "nonce": 0,
+  "pool": Object {},
+  "socket": undefined,
+}
+`;
