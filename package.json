@@ -23,6 +23,7 @@
     "prepublish": "yarn build"
   },
   "dependencies": {
+    "debug": "^4.1.1",
     "http-parser-js": "^0.5.2",
     "node-fetch": "^2.6.0",
     "ws": "^7.2.0"
@@ -39,6 +40,7 @@
     "@babel/preset-env": "7.7.1",
     "@babel/preset-typescript": "^7.7.2",
     "@babel/runtime": "7.7.2",
+    "@types/debug": "^4.1.5",
     "@types/jest": "^24.0.23",
     "@types/node": "^12.12.7",
     "@types/node-fetch": "^2.5.3",

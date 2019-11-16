@@ -1,4 +1,5 @@
-import {assert} from 'console';
+import createDebug from 'debug';
+import assert from 'assert';
 import {EventEmitter} from 'events';
 import WebSocket from 'ws';
 import {USER_AGENT} from './config/env';
@@ -8,6 +9,8 @@ import {
   getTydomDigestAccessAuthenticationFields,
   TydomResponse
 } from './utils/tydom';
+
+const debug = createDebug('tydom-client');
 
 export interface TydomClientOptions {
   username: string;
@@ -29,12 +32,12 @@ export default class TydomClient extends EventEmitter {
   private config: Required<TydomClientOptions>;
   private socket?: WebSocket;
   private nonce: number;
-  private pool: {[s: string]: PromiseExecutor};
+  private pool: Map<string, PromiseExecutor>;
   constructor(options: TydomClientOptions) {
     super();
     this.config = {...defaultOptions, ...options};
     this.nonce = 0;
-    this.pool = {};
+    this.pool = new Map();
   }
   private uniqueId(prefix: string = '') {
     this.nonce++;
@@ -56,22 +59,29 @@ export default class TydomClient extends EventEmitter {
     return new Promise((resolve, reject) => {
       const socket = new WebSocket(`https://${hostname}${uri}`, websocketOptions);
       socket.on('open', () => {
-        console.warn(`Tydom socket opened for hostname="${hostname}"`);
+        debug(`Tydom socket opened for hostname="${hostname}"`);
         this.socket = socket;
         resolve(socket);
       });
       socket.on('message', async (data: Buffer) => {
-        // d('message', data.toString('utf8'));
+        debug(`Tydom socket ${data.length}-sized message received for hostname="${hostname}"`);
         const response = await parseIncomingMessage(isRemote ? data.slice('\x02'.length) : data);
         const requestId = response.headers.get('transac-id');
-        if (this.pool[requestId]) {
-          this.pool[requestId].resolve(response);
+        if (this.pool.has(requestId)) {
+          try {
+            this.pool.get(requestId)!.resolve(response);
+          } catch (err) {
+            this.pool.get(requestId)!.reject(err);
+          } finally {
+            this.pool.delete(requestId);
+          }
         }
       });
       socket.on('close', () => {
-        console.warn(`Tydom socket closed for hostname="${hostname}"`);
+        debug(`Tydom socket closed for hostname="${hostname}"`);
       });
       socket.on('error', err => {
+        debug(`Tydom socket error for hostname="${hostname}"`);
         reject(err);
       });
     });
@@ -95,11 +105,11 @@ export default class TydomClient extends EventEmitter {
       'transac-id': requestId
     };
     const rawHttpRequest = buildRawHttpRequest({url, method: 'GET', headers});
-    console.warn(`Sending request "${rawHttpRequest}"`);
+    debug(`Sending request "${rawHttpRequest.replace(/\r\n/g, '\\r\\n')}"`);
     return new Promise((resolve, reject) => {
       try {
         const resolveJson = async (res: TydomResponse) => resolve(await res.json());
-        this.pool[requestId] = {resolve: resolveJson, reject};
+        this.pool.set(requestId, {resolve: resolveJson, reject});
         this.send(rawHttpRequest);
       } catch (err) {
         reject(err);
@@ -115,11 +125,11 @@ export default class TydomClient extends EventEmitter {
       'transac-id': requestId
     };
     const rawHttpRequest = buildRawHttpRequest({url, method: 'PUT', headers, body: stringifiedBody});
-    console.warn(`Sending request "${rawHttpRequest}"`);
+    debug(`Sending request "${rawHttpRequest}"`);
     return new Promise((resolve, reject) => {
       try {
         const resolveJson = async (res: TydomResponse) => resolve(await res.json());
-        this.pool[requestId] = {resolve: resolveJson, reject};
+        this.pool.set(requestId, {resolve: resolveJson, reject});
         this.send(rawHttpRequest);
       } catch (err) {
         reject(err);
