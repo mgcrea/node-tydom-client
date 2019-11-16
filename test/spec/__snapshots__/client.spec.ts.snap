@@ -7,10 +7,12 @@ TydomClient {
   "_maxListeners": undefined,
   "config": Object {
     "hostname": "mediation.tydom.com",
+    "keepAlive": true,
     "password": "MyPassw0rd!",
     "userAgent": "Tydom/192 CFNetwork/1120 Darwin/19.0.0",
     "username": "001A25123456",
   },
+  "keepAliveInterval": undefined,
   "nonce": 0,
   "pool": Map {},
   "socket": undefined,
