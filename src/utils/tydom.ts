@@ -18,7 +18,7 @@ export const castTydomResponse = (body: string, headers: Map<string, string>): T
     if (!hasBody || !shouldBeJson) {
       return {};
     }
-    if (isActuallyHtml) {
+    if (shouldBeJson && isActuallyHtml) {
       return {error: 1};
     }
     return JSON.parse(body);

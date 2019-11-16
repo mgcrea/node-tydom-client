@@ -13,16 +13,21 @@ import {getTydomDigestAccessAuthenticationFields, TydomResponse} from './utils/t
 
 const debug = createDebug('tydom-client');
 
-export interface TydomClientOptions {
+export interface TydomClientConnectOptions {
+  keepAlive?: boolean;
+}
+
+export interface TydomClientOptions extends TydomClientConnectOptions {
   username: string;
   password: string;
   hostname?: string;
   userAgent?: string;
 }
 
-export const defaultOptions: Required<Pick<TydomClientOptions, 'userAgent' | 'hostname'>> = {
+export const defaultOptions: Required<Pick<TydomClientOptions, 'userAgent' | 'hostname' | 'keepAlive'>> = {
   hostname: 'mediation.tydom.com',
-  userAgent: USER_AGENT
+  userAgent: USER_AGENT,
+  keepAlive: true
 };
 
 export const createClient = (options: TydomClientOptions) => new TydomClient(options);
@@ -34,6 +39,7 @@ export default class TydomClient extends EventEmitter {
   private socket?: WebSocket;
   private nonce: number;
   private pool: Map<string, PromiseExecutor>;
+  private keepAliveInterval?: NodeJS.Timeout;
   constructor(options: TydomClientOptions) {
     super();
     this.config = {...defaultOptions, ...options};
@@ -45,7 +51,7 @@ export default class TydomClient extends EventEmitter {
     return `${prefix}${this.nonce}`;
   }
   public async connect() {
-    const {username, password, hostname, userAgent} = this.config;
+    const {username, password, hostname, userAgent, keepAlive} = this.config;
     const isRemote = hostname === 'mediation.tydom.com';
     const uri = `/mediation/client?mac=${username}&appli=1`;
     const headers = {'User-Agent': userAgent};
@@ -62,10 +68,19 @@ export default class TydomClient extends EventEmitter {
       socket.on('open', () => {
         debug(`Tydom socket opened for hostname="${hostname}"`);
         this.socket = socket;
+        if (keepAlive) {
+          this.keepAliveInterval = setInterval(() => {
+            this.get('/ping');
+          }, 30e3);
+        }
         resolve(socket);
       });
       socket.on('message', async (data: Buffer) => {
-        debug(`Tydom socket ${data.length}-sized message received for hostname="${hostname}"`);
+        debug(
+          `Tydom socket ${data.length}-sized message received for hostname="${hostname}":\n${data
+            .toString('utf8')
+            .replace(/(.+)\r\n/g, '  $1\r\n')}`
+        );
         const response = await parseIncomingMessage(isRemote ? data.slice('\x02'.length) : data);
         const requestId = response.headers.get('transac-id');
         if (this.pool.has(requestId)) {
@@ -88,6 +103,9 @@ export default class TydomClient extends EventEmitter {
     });
   }
   public async close() {
+    if (this.keepAliveInterval) {
+      clearInterval(this.keepAliveInterval);
+    }
     if (this.socket instanceof WebSocket) {
       this.socket.close();
     }
@@ -98,12 +116,14 @@ export default class TydomClient extends EventEmitter {
     const isRemote = hostname === 'mediation.tydom.com';
     this.socket!.send(Buffer.from(isRemote ? `\x02${rawHttpRequest}` : rawHttpRequest, 'ascii'));
   }
-  private request(requestId: string, options: BuildRawHttpRequestOptions) {
+  private async request(requestId: string, options: BuildRawHttpRequestOptions) {
     const rawHttpRequest = buildRawHttpRequest(options);
     debug(`Sending request "${rawHttpRequest.replace(/\r\n/g, '\\r\\n')}"`);
     return new Promise((resolve, reject) => {
       try {
-        const resolveJson = async (res: TydomResponse) => resolve(await res.json());
+        const resolveJson = async (res: TydomResponse) => {
+          resolve(await res.json());
+        };
         this.pool.set(requestId, {resolve: resolveJson, reject});
         this.send(rawHttpRequest);
       } catch (err) {
@@ -118,7 +138,7 @@ export default class TydomClient extends EventEmitter {
       'content-type': 'application/json; charset=utf-8',
       'transac-id': requestId
     };
-    await this.request(requestId, {url, method: 'GET', headers});
+    return await this.request(requestId, {url, method: 'GET', headers});
   }
   public async put(url: string, body: {[s: string]: any}) {
     const requestId = this.uniqueId('request_');
@@ -128,6 +148,6 @@ export default class TydomClient extends EventEmitter {
       'content-type': 'application/json; charset=utf-8',
       'transac-id': requestId
     };
-    await this.request(requestId, {url, method: 'PUT', headers, body: stringifiedBody});
+    return await this.request(requestId, {url, method: 'PUT', headers, body: stringifiedBody});
   }
 }
