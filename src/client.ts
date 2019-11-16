@@ -3,12 +3,13 @@ import assert from 'assert';
 import {EventEmitter} from 'events';
 import WebSocket from 'ws';
 import {USER_AGENT} from './config/env';
-import {buildRawHttpRequest, parseIncomingMessage} from './utils/http';
 import {
-  computeDigestAccessAuthenticationHeader,
-  getTydomDigestAccessAuthenticationFields,
-  TydomResponse
-} from './utils/tydom';
+  buildRawHttpRequest,
+  parseIncomingMessage,
+  BuildRawHttpRequestOptions,
+  computeDigestAccessAuthenticationHeader
+} from './utils/http';
+import {getTydomDigestAccessAuthenticationFields, TydomResponse} from './utils/tydom';
 
 const debug = createDebug('tydom-client');
 
@@ -97,14 +98,8 @@ export default class TydomClient extends EventEmitter {
     const isRemote = hostname === 'mediation.tydom.com';
     this.socket!.send(Buffer.from(isRemote ? `\x02${rawHttpRequest}` : rawHttpRequest, 'ascii'));
   }
-  public async get(url: string) {
-    const requestId = this.uniqueId('request_');
-    const headers = {
-      'content-length': '0',
-      'content-type': 'application/json; charset=utf-8',
-      'transac-id': requestId
-    };
-    const rawHttpRequest = buildRawHttpRequest({url, method: 'GET', headers});
+  private request(requestId: string, options: BuildRawHttpRequestOptions) {
+    const rawHttpRequest = buildRawHttpRequest(options);
     debug(`Sending request "${rawHttpRequest.replace(/\r\n/g, '\\r\\n')}"`);
     return new Promise((resolve, reject) => {
       try {
@@ -116,6 +111,15 @@ export default class TydomClient extends EventEmitter {
       }
     });
   }
+  public async get(url: string) {
+    const requestId = this.uniqueId('request_');
+    const headers = {
+      'content-length': '0',
+      'content-type': 'application/json; charset=utf-8',
+      'transac-id': requestId
+    };
+    await this.request(requestId, {url, method: 'GET', headers});
+  }
   public async put(url: string, body: {[s: string]: any}) {
     const requestId = this.uniqueId('request_');
     const stringifiedBody = JSON.stringify(body);
@@ -124,16 +128,6 @@ export default class TydomClient extends EventEmitter {
       'content-type': 'application/json; charset=utf-8',
       'transac-id': requestId
     };
-    const rawHttpRequest = buildRawHttpRequest({url, method: 'PUT', headers, body: stringifiedBody});
-    debug(`Sending request "${rawHttpRequest}"`);
-    return new Promise((resolve, reject) => {
-      try {
-        const resolveJson = async (res: TydomResponse) => resolve(await res.json());
-        this.pool.set(requestId, {resolve: resolveJson, reject});
-        this.send(rawHttpRequest);
-      } catch (err) {
-        reject(err);
-      }
-    });
+    await this.request(requestId, {url, method: 'PUT', headers, body: stringifiedBody});
   }
 }

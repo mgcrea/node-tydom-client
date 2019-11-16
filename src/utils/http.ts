@@ -1,6 +1,7 @@
 // @ts-ignore
 import {HTTPParser} from 'http-parser-js';
 import {castTydomResponse} from './tydom';
+import {getRequestCounter, getRandomBytes, md5} from './crypto';
 
 export const parser = new HTTPParser(HTTPParser.RESPONSE);
 
@@ -28,7 +29,7 @@ export const parseIncomingMessage = async (data: Buffer): Promise<{[s: string]: 
   });
 };
 
-type BuildRawHttpRequestOptions = {
+export type BuildRawHttpRequestOptions = {
   url: string;
   method: 'GET' | 'PUT';
   headers: {[s: string]: string};
@@ -41,4 +42,38 @@ export const buildRawHttpRequest = ({url, method, headers, body}: BuildRawHttpRe
     return `${soFar}${key}: ${headers[key]}\r\n`;
   }, '');
   return `${rawRequest}\r\n${rawHeaders}\r\n\r\n${body ? `${body}\r\n\r\n` : ''}`;
+};
+
+export type DigestAccessAuthenticationOptions = {
+  uri: string;
+  username: string;
+  password: string;
+};
+
+export type DigestAccessAuthenticationFields = {
+  realm: string;
+  qop: string;
+  nonce: string;
+  opaque?: string;
+};
+
+export type DigestAccessAuthenticationHeader = {
+  header: string;
+  response: string;
+  nc: string;
+  cnonce: string;
+};
+
+export const computeDigestAccessAuthenticationHeader = async (
+  {uri, username, password}: DigestAccessAuthenticationOptions,
+  {realm, qop, nonce /*, opaque */}: DigestAccessAuthenticationFields
+): Promise<DigestAccessAuthenticationHeader> => {
+  const nc = getRequestCounter();
+  const cnonce = (await getRandomBytes(4)).toString('hex');
+  const ha1 = (await md5(`${username}:${realm}:${password}`)).toString('hex');
+  const ha2 = (await md5(`GET:${uri}`)).toString('hex');
+  const res = `${ha1}:${nonce}:${nc}:${cnonce}:${qop}:${ha2}`;
+  const response = (await md5(res)).toString('hex');
+  const header = `Digest username="${username}", realm="${realm}", nonce="${nonce}", uri="${uri}", response="${response}", qop=${qop}, nc=${nc}, cnonce="${cnonce}"`;
+  return {header, response, nc, cnonce};
 };
