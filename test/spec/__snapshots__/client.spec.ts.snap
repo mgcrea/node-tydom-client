@@ -12,7 +12,7 @@ TydomClient {
     "username": "001A25123456",
   },
   "nonce": 0,
-  "pool": Object {},
+  "pool": Map {},
   "socket": undefined,
 }
 `;
