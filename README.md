@@ -81,6 +81,11 @@ const client = createClient({username, password, hostname});
 - http://olouv.com
 - http://github.com/mgcrea
 
+### Credits/Inspiration
+
+- [depoon/iOSDylibInjectionDemo](https://github.com/depoon/iOSDylibInjectionDemo) for sideloading the iOS app
+- [cth35/tydom_python](https://github.com/cth35/tydom_python) for API discovery
+
 ## License
 
 ```
