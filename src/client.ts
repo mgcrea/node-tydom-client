@@ -116,8 +116,15 @@ export default class TydomClient extends EventEmitter {
     const isRemote = hostname === 'mediation.tydom.com';
     this.socket!.send(Buffer.from(isRemote ? `\x02${rawHttpRequest}` : rawHttpRequest, 'ascii'));
   }
-  private async request(requestId: string, options: BuildRawHttpRequestOptions) {
-    const rawHttpRequest = buildRawHttpRequest(options);
+  private async request({url, method, headers: extraHeaders = {}, body}: BuildRawHttpRequestOptions) {
+    const requestId = this.uniqueId('request_');
+    const headers = {
+      ...extraHeaders,
+      'content-length': `${body ? body.length : 0}`,
+      'content-type': 'application/json; charset=utf-8',
+      'transac-id': requestId
+    };
+    const rawHttpRequest = buildRawHttpRequest({url, method, headers, body});
     debug(`Sending request "${rawHttpRequest.replace(/\r\n/g, '\\r\\n')}"`);
     return new Promise((resolve, reject) => {
       try {
@@ -132,22 +139,15 @@ export default class TydomClient extends EventEmitter {
     });
   }
   public async get(url: string) {
-    const requestId = this.uniqueId('request_');
-    const headers = {
-      'content-length': '0',
-      'content-type': 'application/json; charset=utf-8',
-      'transac-id': requestId
-    };
-    return await this.request(requestId, {url, method: 'GET', headers});
+    return await this.request({url, method: 'GET'});
   }
-  public async put(url: string, body: {[s: string]: any}) {
-    const requestId = this.uniqueId('request_');
-    const stringifiedBody = JSON.stringify(body);
-    const headers = {
-      'content-length': `${stringifiedBody.length}`,
-      'content-type': 'application/json; charset=utf-8',
-      'transac-id': requestId
-    };
-    return await this.request(requestId, {url, method: 'PUT', headers, body: stringifiedBody});
+  public async delete(url: string) {
+    return await this.request({url, method: 'DELETE'});
+  }
+  public async put(url: string, body: {[s: string]: any} = {}) {
+    return await this.request({url, method: 'PUT', body: JSON.stringify(body)});
+  }
+  public async post(url: string, body: {[s: string]: any} = {}) {
+    return await this.request({url, method: 'POST', body: JSON.stringify(body)});
   }
 }

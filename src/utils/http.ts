@@ -31,12 +31,12 @@ export const parseIncomingMessage = async (data: Buffer): Promise<{[s: string]: 
 
 export type BuildRawHttpRequestOptions = {
   url: string;
-  method: 'GET' | 'PUT';
-  headers: {[s: string]: string};
+  method: 'GET' | 'PUT' | 'POST' | 'DELETE';
+  headers?: {[s: string]: string};
   body?: string;
 };
 
-export const buildRawHttpRequest = ({url, method, headers, body}: BuildRawHttpRequestOptions) => {
+export const buildRawHttpRequest = ({url, method, headers = {}, body}: BuildRawHttpRequestOptions) => {
   const rawRequest = `${method} ${url} HTTP/1.1`;
   const rawHeaders = Object.keys(headers).reduce((soFar, key) => {
     return `${soFar}${key}: ${headers[key]}\r\n`;
