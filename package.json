@@ -1,6 +1,6 @@
 {
   "name": "tydom-client",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Easily manage Tydom hardware by Delta Dore from Node.js",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -23,6 +23,7 @@
     "prepublish": "yarn build"
   },
   "dependencies": {
+    "@babel/runtime": "7.7.2",
     "debug": "^4.1.1",
     "http-parser-js": "^0.5.2",
     "node-fetch": "^2.6.0",
@@ -39,7 +40,6 @@
     "@babel/plugin-transform-runtime": "^7.6.2",
     "@babel/preset-env": "7.7.1",
     "@babel/preset-typescript": "^7.7.2",
-    "@babel/runtime": "7.7.2",
     "@types/debug": "^4.1.5",
     "@types/jest": "^24.0.23",
     "@types/node": "^12.12.7",
