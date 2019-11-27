@@ -75,19 +75,19 @@ const client = createClient({username, password, hostname});
 
 ### Known Tydom interface (wip)
 
-| **Method** | **Uri**                                           | **Description**                  |
-| ---------- | ------------------------------------------------- | -------------------------------- |
-| GET        | /info                                             | get generic tydom information    |
-| GET        | /ping                                             | ping tydom                       |
-| GET        | /devices/data                                     | Get tydom devices data/state     |
-| GET        | /devices/meta                                     | Get tydom devices meta           |
-| GET        | /devices/cmeta                                    | Get tydom devices command meta   |
-| GET        | /configs/file                                     | Get tydom user config            |
-| GET        | /groups/file                                      | Get tydom groups config          |
-| GET        | /moments/file                                     | Get tydom moments config         |
-| GET        | /protocols                                        | List available protocols         |
-| POST       | /refresh/all                                      | Force refresh tydom devices data |
-| PUT        | /devices/${DEVICE_ID}/endpoints/${DEVICE_ID}/data | Update tydom device data/state   |
+| **Method** | **Uri**                                             | **Description**                  |
+| ---------- | --------------------------------------------------- | -------------------------------- |
+| `GET`      | `/info`                                             | get generic tydom information    |
+| `GET`      | `/ping`                                             | ping tydom                       |
+| `GET`      | `/devices/data`                                     | Get tydom devices data/state     |
+| `GET`      | `/devices/meta`                                     | Get tydom devices meta           |
+| `GET`      | `/devices/cmeta`                                    | Get tydom devices command meta   |
+| `GET`      | `/configs/file`                                     | Get tydom user config            |
+| `GET`      | `/groups/file`                                      | Get tydom groups config          |
+| `GET`      | `/moments/file`                                     | Get tydom moments config         |
+| `GET`      | `/protocols`                                        | List available protocols         |
+| `POST`     | `/refresh/all`                                      | Force refresh tydom devices data |
+| `PUT`      | `/devices/${DEVICE_ID}/endpoints/${DEVICE_ID}/data` | Update tydom device data/state   |
 
 ### Available scripts
 
