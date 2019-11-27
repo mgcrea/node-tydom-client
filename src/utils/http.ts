@@ -1,4 +1,3 @@
-// @ts-ignore
 import {HTTPParser} from 'http-parser-js';
 import {castTydomResponse} from './tydom';
 import {getRequestCounter, getRandomBytes, md5} from './crypto';

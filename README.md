@@ -85,6 +85,7 @@ const client = createClient({username, password, hostname});
 | `GET`      | `/configs/file`                                     | Get tydom user config            |
 | `GET`      | `/groups/file`                                      | Get tydom groups config          |
 | `GET`      | `/moments/file`                                     | Get tydom moments config         |
+| `GET`      | `/scenarios/file`                                   | Get tydom scenarios config       |
 | `GET`      | `/protocols`                                        | List available protocols         |
 | `POST`     | `/refresh/all`                                      | Force refresh tydom devices data |
 | `GET`      | `/devices/${DEVICE_ID}/endpoints/${DEVICE_ID}/data` | GET tydom device data/state      |

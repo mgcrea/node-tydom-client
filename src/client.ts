@@ -46,7 +46,7 @@ export default class TydomClient extends EventEmitter {
     this.nonce = 0;
     this.pool = new Map();
   }
-  private uniqueId(prefix: string = '') {
+  private uniqueId(prefix = '') {
     this.nonce++;
     return `${prefix}${this.nonce}`;
   }

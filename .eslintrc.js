@@ -23,5 +23,6 @@ module.exports = {
     '@typescript-eslint/explicit-function-return-type': 'off',
     '@typescript-eslint/prefer-interface': 'off',
     '@typescript-eslint/array-type': 'off'
-  }
+  },
+  ignorePatterns: ['lib/', 'node_modules/']
 };
