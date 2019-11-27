@@ -25,6 +25,14 @@ yarn add tydom-client
 npm install tydom-client
 ```
 
+### Debug
+
+This library uses [debug](https://www.npmjs.com/package/debug) to provide high verbosity logs, just pass the following environment:
+
+```bash
+DEBUG=tydom-client
+```
+
 ### Examples
 
 #### Simple example
@@ -36,7 +44,12 @@ You can use the provided factory function to quickly get a working client
 // to fix "self signed certificate" errors
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
-import {createClient} from 'tydom-client';
+const {createClient} = require('tydom-client');
+// -or- use named exports (requires babel)
+// import {createClient} from 'tydom-client';
+// -or- destructure first when using Node.js native modules (eg. `--experimental-modules`)
+// import tydomClient from 'tydom-client';
+// const {createClient} = tydomClient;
 
 const username = '001A25123456';
 const password = 'MyPassw0rd!';
@@ -59,6 +72,22 @@ const client = createClient({username, password, hostname});
   ]);
 })();
 ```
+
+### Known Tydom interface (wip)
+
+| **Method** | **Uri**                                           | **Description**                  |
+| ---------- | ------------------------------------------------- | -------------------------------- |
+| GET        | /info                                             | get generic tydom information    |
+| GET        | /ping                                             | ping tydom                       |
+| GET        | /devices/data                                     | Get tydom devices data/state     |
+| GET        | /devices/meta                                     | Get tydom devices meta           |
+| GET        | /devices/cmeta                                    | Get tydom devices command meta   |
+| GET        | /configs/file                                     | Get tydom user config            |
+| GET        | /groups/file                                      | Get tydom groups config          |
+| GET        | /moments/file                                     | Get tydom moments config         |
+| GET        | /protocols                                        | List available protocols         |
+| POST       | /refresh/all                                      | Force refresh tydom devices data |
+| PUT        | /devices/${DEVICE_ID}/endpoints/${DEVICE_ID}/data | Update tydom device data/state   |
 
 ### Available scripts
 
