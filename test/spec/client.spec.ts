@@ -13,7 +13,8 @@ describe('client', () => {
   it('should properly create a client', () => {
     const client = createClient({username, password});
     expect(client).toBeDefined();
-    expect(client).toMatchSnapshot();
+    expect(Object.keys(client)).toMatchSnapshot();
+    expect(Object.values(client)).toMatchSnapshot();
   });
   it('should properly connect to a remote tydom server', async () => {
     const client = createClient({username, password});
