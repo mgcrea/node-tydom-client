@@ -1,0 +1,36 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`parseIncomingMessage should properly parse a getInfoResponse response 1`] = `
+Object {
+  "body": "{\\"productName\\": \\"TYDOM2\\",\\"mac\\": \\"001A2502951F\\",\\"config\\": \\"prod\\",\\"bddEmpty\\": false,\\"bddStatus\\": 0,\\"apiMode\\": true,\\"mainVersionSW\\": \\"02.02.53\\",\\"mainVersionHW\\": \\"00.00.01\\",\\"mainId\\": \\"6414118\\",\\"mainReference\\": \\"21260010\\",\\"keyVersionSW\\": \\"01.03.03\\",\\"keyVersionHW\\": \\"00.00.01\\",\\"keyVersionStack\\": \\"01.01.03\\",\\"keyReference\\": \\"21260011\\",\\"bootReference\\": \\"P21260012\\",\\"bootVersion\\": \\"01.00.03\\",\\"TYDOM.dat\\": 1,\\"config.json\\": 1,\\"mom.json\\": 0,\\"gateway.dat\\": 0,\\"bdd.json\\": 11,\\"collect.json\\": 5,\\"groups.json\\": 6,\\"mom_api.json\\": 105,\\"scenario.json\\": 5,\\"site.json\\": 149,\\"bdd_mig.json\\": 0,\\"info_mig.json\\": 0,\\"urlMediation\\": \\"mediation.tydom.com\\",\\"updateAvailable\\": false,\\"passwordEmpty\\": false,\\"geoloc\\": {\\"longitude\\": 2125472,\\"latitude\\": 48897412},\\"clock\\": {\\"clock\\": \\"2020-01-17T13:12:13+01:00\\",\\"timezone\\": 60,\\"summerOffset\\": \\"ON\\"},\\"moments\\": {\\"suspend\\": {\\"to\\": 0}}}",
+  "headers": Map {
+    "server" => "Tydom-001A2502951F",
+    "uri-origin" => "/info",
+    "content-type" => "application/json",
+    "transfer-encoding" => "chunked",
+    "transac-id" => "request_1",
+  },
+  "json": [Function],
+  "method": "GET",
+  "status": 200,
+  "type": "response",
+  "uri": "/info",
+}
+`;
+
+exports[`parseIncomingMessage should properly parse a updatedDevicesData response 1`] = `
+Object {
+  "body": "[{\\"id\\":1531745761,\\"endpoints\\":[{\\"id\\":1531745761,\\"error\\":0,\\"data\\":[{\\"name\\":\\"level\\",\\"validity\\":\\"upToDate\\",\\"value\\":100},{\\"name\\":\\"onFavPos\\",\\"validity\\":\\"upToDate\\",\\"value\\":false}]}]}]
+",
+  "headers": Map {
+    "server" => "Tydom-001A2502951F",
+    "content-type" => "application/json",
+    "transfer-encoding" => "chunked",
+  },
+  "json": [Function],
+  "method": "PUT",
+  "status": 200,
+  "type": "response",
+  "uri": "/devices/data",
+}
+`;

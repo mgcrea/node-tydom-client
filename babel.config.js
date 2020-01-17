@@ -12,6 +12,14 @@ module.exports = {
     ]
   ],
   plugins: [
+    [
+      'babel-plugin-module-name-mapper',
+      {
+        moduleNameMapper: {
+          '^src/(.*)': '<rootDir>/src/$1'
+        }
+      }
+    ],
     '@babel/plugin-proposal-class-properties',
     '@babel/plugin-proposal-optional-chaining',
     '@babel/plugin-proposal-object-rest-spread',

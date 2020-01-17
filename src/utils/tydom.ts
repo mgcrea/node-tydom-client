@@ -2,14 +2,22 @@ import fetch from 'node-fetch';
 import assert from 'assert';
 import {DigestAccessAuthenticationFields} from './http';
 
-export type TydomResponse = {
-  status: number;
+export type TydomResponse = Record<string, unknown>;
+
+export type CastTydomMessageProps = {
+  type: 'request' | 'response';
+  uri: string;
+  method: 'GET' | 'PUT' | string;
   body: string;
   headers: Map<string, string>;
-  json: () => Promise<{[s: string]: string}>;
 };
 
-export const castTydomResponse = (body: string, headers: Map<string, string>): TydomResponse => {
+export type TydomHttpMessage = CastTydomMessageProps & {
+  status: number;
+  json: () => Promise<TydomResponse>;
+};
+
+export const castTydomMessage = async ({type, uri, method, body, headers}: CastTydomMessageProps): TydomHttpMessage => {
   const hasBody = body.length > 0;
   const shouldBeJson = headers.has('content-type') && headers.get('content-type')!.includes('application/json');
   const isActuallyHtml = hasBody && body.startsWith('<!doctype html>');
@@ -19,11 +27,11 @@ export const castTydomResponse = (body: string, headers: Map<string, string>): T
       return {};
     }
     if (shouldBeJson && isActuallyHtml) {
-      return {error: 1};
+      return {error: 1, body};
     }
     return JSON.parse(body);
   };
-  return {status, body, headers, json};
+  return {type, uri, method, status, body: await json(), headers};
 };
 
 type GetTydomDigestAccessAuthenticationOptions = {

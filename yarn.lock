@@ -1487,6 +1487,13 @@ babel-plugin-jest-hoist@^24.9.0:
   dependencies:
     "@types/babel__traverse" "^7.0.6"
 
+babel-plugin-module-name-mapper@^1.2.0:
+  version "1.2.0"
+  resolved "https://registry.npmjs.org/babel-plugin-module-name-mapper/-/babel-plugin-module-name-mapper-1.2.0.tgz#bc7996992085e50b1c34514bd800ec18d0b11467"
+  integrity sha512-Nvn8vpgpxyoXUl8jIANbLuViolU/2YoI9YIX4dx6NAOORrIJpuJllWCRrCBpa8mP/jP06Rt7wGAiPDj0ryPQDQ==
+  dependencies:
+    lodash.memoize "^4.1.2"
+
 babel-preset-jest@^24.9.0:
   version "24.9.0"
   resolved "https://registry.npmjs.org/babel-preset-jest/-/babel-preset-jest-24.9.0.tgz#192b521e2217fb1d1f67cf73f70c336650ad3cdc"
@@ -3461,6 +3468,11 @@ locate-path@^3.0.0:
   dependencies:
     p-locate "^3.0.0"
     path-exists "^3.0.0"
+
+lodash.memoize@^4.1.2:
+  version "4.1.2"
+  resolved "https://registry.npmjs.org/lodash.memoize/-/lodash.memoize-4.1.2.tgz#bcc6c49a42a2840ed997f323eada5ecd182e0bfe"
+  integrity sha1-vMbEmkKihA7Zl/Mj6tpezRguC/4=
 
 lodash.sortby@^4.7.0:
   version "4.7.0"

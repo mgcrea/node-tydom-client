@@ -9,9 +9,13 @@ import {
   BuildRawHttpRequestOptions,
   computeDigestAccessAuthenticationHeader
 } from './utils/http';
-import {getTydomDigestAccessAuthenticationFields, TydomResponse} from './utils/tydom';
+import {getTydomDigestAccessAuthenticationFields, TydomResponse, TydomHttpResponse} from './utils/tydom';
 
 const debug = createDebug('tydom-client');
+
+// interface GuardedMap<K, V> extends Map<K, V> {
+//   has<S extends K>(k: S): this is (K extends S ? {} : {get(k: S): V}) & this;
+// }
 
 export interface TydomClientConnectOptions {
   keepAlive?: boolean;
@@ -27,7 +31,7 @@ export interface TydomClientOptions extends TydomClientConnectOptions {
 export const defaultOptions: Required<Pick<TydomClientOptions, 'userAgent' | 'hostname' | 'keepAlive'>> = {
   hostname: 'mediation.tydom.com',
   userAgent: USER_AGENT,
-  keepAlive: true
+  keepAlive: false
 };
 
 export const createClient = (options: TydomClientOptions) => new TydomClient(options);
@@ -81,16 +85,19 @@ export default class TydomClient extends EventEmitter {
             .toString('utf8')
             .replace(/(.+)\r\n/g, '  $1\r\n')}`
         );
-        const response = await parseIncomingMessage(isRemote ? data.slice('\x02'.length) : data);
-        const requestId = response.headers.get('transac-id');
+        const parsedMessage = await parseIncomingMessage(isRemote ? data.slice('\x02'.length) : data);
+        const requestId = parsedMessage.headers.get('transac-id');
         if (this.pool.has(requestId)) {
           try {
-            this.pool.get(requestId)!.resolve(response);
+            this.pool.get(requestId)!.resolve(parsedMessage);
           } catch (err) {
             this.pool.get(requestId)!.reject(err);
           } finally {
             this.pool.delete(requestId);
           }
+        } else {
+          // Relay message on client
+          this.emit('message', parsedMessage);
         }
       });
       socket.on('close', () => {
@@ -116,7 +123,12 @@ export default class TydomClient extends EventEmitter {
     const isRemote = hostname === 'mediation.tydom.com';
     this.socket!.send(Buffer.from(isRemote ? `\x02${rawHttpRequest}` : rawHttpRequest, 'ascii'));
   }
-  private async request({url, method, headers: extraHeaders = {}, body}: BuildRawHttpRequestOptions) {
+  private async request({
+    url,
+    method,
+    headers: extraHeaders = {},
+    body
+  }: BuildRawHttpRequestOptions): Promise<TydomResponse> {
     const requestId = this.uniqueId('request_');
     const headers = {
       ...extraHeaders,
@@ -128,10 +140,8 @@ export default class TydomClient extends EventEmitter {
     debug(`Sending request "${rawHttpRequest.replace(/\r\n/g, '\\r\\n')}"`);
     return new Promise((resolve, reject) => {
       try {
-        const resolveJson = async (res: TydomResponse) => {
-          resolve(await res.json());
-        };
-        this.pool.set(requestId, {resolve: resolveJson, reject});
+        const resolveBody = (res: TydomHttpResponse) => res.body;
+        this.pool.set(requestId, {resolve: resolveBody, reject});
         this.send(rawHttpRequest);
       } catch (err) {
         reject(err);

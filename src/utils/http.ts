@@ -1,30 +1,47 @@
 import {HTTPParser} from 'http-parser-js';
-import {castTydomResponse} from './tydom';
+import {castTydomMessage} from './tydom';
 import {getRequestCounter, getRandomBytes, md5} from './crypto';
 
 export const parser = new HTTPParser(HTTPParser.RESPONSE);
 
-export const parseIncomingMessage = async (data: Buffer): Promise<{[s: string]: any}> => {
-  return new Promise((resolve /*, reject */) => {
-    const bodyParts: Buffer[] = [];
-    let headers = new Map<string, string>();
-    parser.onHeadersComplete = (res: {headers: string[]}) => {
-      headers = res.headers.reduce<{headers: Map<string, string>; lastValue: string}>(
-        (soFar, value, index) => {
-          index % 2 ? soFar.headers.set(soFar.lastValue.toLowerCase(), value) : (soFar.lastValue = value);
-          return soFar;
-        },
-        {headers, lastValue: ''}
-      ).headers;
-    };
-    parser.onBody = (chunk: Buffer, offset: number, length: number) => {
-      bodyParts.push(chunk.slice(offset, offset + length));
-    };
-    parser.onMessageComplete = function() {
-      const body = Buffer.concat(bodyParts).toString('utf8');
-      resolve(castTydomResponse(body, headers));
-    };
-    parser.execute(data);
+export const parseIncomingMessage = async (data: Buffer): Promise<Record<string, unknown>> => {
+  return new Promise((resolve, reject) => {
+    try {
+      const responseFirstBytes = Buffer.from('HTTP/1.1 200 OK\r\n');
+      const isResponse = data.slice(0, responseFirstBytes.length).equals(responseFirstBytes);
+      // Always parse as a response for http-parser-js
+      const buffer = isResponse ? data : Buffer.concat([responseFirstBytes, data]);
+      const bodyParts: Buffer[] = [];
+      let headers = new Map<string, string>();
+      parser.onHeadersComplete = (res: {headers: string[]}) => {
+        headers = res.headers.reduce<{headers: Map<string, string>; lastValue: string}>(
+          (soFar, value, index) => {
+            index % 2 ? soFar.headers.set(soFar.lastValue.toLowerCase(), value) : (soFar.lastValue = value);
+            return soFar;
+          },
+          {headers, lastValue: ''}
+        ).headers;
+      };
+      parser.onBody = (chunk: Buffer, offset: number, length: number) => {
+        bodyParts.push(chunk.slice(offset, offset + length));
+      };
+      parser.onMessageComplete = () => {
+        const body = Buffer.concat(bodyParts).toString('utf8');
+        if (isResponse) {
+          const uri = headers.get('uri-origin') || '/';
+          resolve(castTydomMessage({type: 'response', method: 'GET', uri, body, headers}));
+          return;
+        }
+        const [method, uri] = data
+          .slice(0, data.indexOf('\r\n'))
+          .toString('utf8')
+          .split(' ');
+        resolve(castTydomMessage({type: 'request', method, uri, body, headers}));
+      };
+      parser.execute(buffer);
+    } catch (err) {
+      reject(err);
+    }
   });
 };
 

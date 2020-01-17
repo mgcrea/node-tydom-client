@@ -1,5 +1,5 @@
 import console from 'console';
 import {inspect} from 'util';
 
-global.d = (obj: any) => console.log(`\t${inspect(obj, {depth: 10, colors: true})}\n`);
+global.d = (...args) => console.dir(args.length > 1 ? args : args[0], {colors: true, depth: 10});
 global.t = Date.now();
