@@ -9,13 +9,9 @@ import {
   BuildRawHttpRequestOptions,
   computeDigestAccessAuthenticationHeader
 } from './utils/http';
-import {getTydomDigestAccessAuthenticationFields, TydomResponse, TydomHttpResponse} from './utils/tydom';
+import {getTydomDigestAccessAuthenticationFields, TydomResponse, TydomHttpMessage} from './utils/tydom';
 
 const debug = createDebug('tydom-client');
-
-// interface GuardedMap<K, V> extends Map<K, V> {
-//   has<S extends K>(k: S): this is (K extends S ? {} : {get(k: S): V}) & this;
-// }
 
 export interface TydomClientConnectOptions {
   keepAlive?: boolean;
@@ -148,7 +144,7 @@ export default class TydomClient extends EventEmitter {
     debug(`Sending request "${rawHttpRequest.replace(/\r\n/g, '\\r\\n')}"`);
     return new Promise((resolve, reject) => {
       try {
-        const resolveBody = (res: TydomHttpResponse) => res.body;
+        const resolveBody = (res: TydomHttpMessage) => res.body;
         this.pool.set(requestId, {resolve: resolveBody, reject});
         this.send(rawHttpRequest);
       } catch (err) {
