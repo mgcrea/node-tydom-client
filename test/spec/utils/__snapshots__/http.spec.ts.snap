@@ -2,7 +2,53 @@
 
 exports[`parseIncomingMessage should properly parse a getInfoResponse response 1`] = `
 Object {
-  "body": "{\\"productName\\": \\"TYDOM2\\",\\"mac\\": \\"001A2502951F\\",\\"config\\": \\"prod\\",\\"bddEmpty\\": false,\\"bddStatus\\": 0,\\"apiMode\\": true,\\"mainVersionSW\\": \\"02.02.53\\",\\"mainVersionHW\\": \\"00.00.01\\",\\"mainId\\": \\"6414118\\",\\"mainReference\\": \\"21260010\\",\\"keyVersionSW\\": \\"01.03.03\\",\\"keyVersionHW\\": \\"00.00.01\\",\\"keyVersionStack\\": \\"01.01.03\\",\\"keyReference\\": \\"21260011\\",\\"bootReference\\": \\"P21260012\\",\\"bootVersion\\": \\"01.00.03\\",\\"TYDOM.dat\\": 1,\\"config.json\\": 1,\\"mom.json\\": 0,\\"gateway.dat\\": 0,\\"bdd.json\\": 11,\\"collect.json\\": 5,\\"groups.json\\": 6,\\"mom_api.json\\": 105,\\"scenario.json\\": 5,\\"site.json\\": 149,\\"bdd_mig.json\\": 0,\\"info_mig.json\\": 0,\\"urlMediation\\": \\"mediation.tydom.com\\",\\"updateAvailable\\": false,\\"passwordEmpty\\": false,\\"geoloc\\": {\\"longitude\\": 2125472,\\"latitude\\": 48897412},\\"clock\\": {\\"clock\\": \\"2020-01-17T13:12:13+01:00\\",\\"timezone\\": 60,\\"summerOffset\\": \\"ON\\"},\\"moments\\": {\\"suspend\\": {\\"to\\": 0}}}",
+  "body": Object {
+    "TYDOM.dat": 1,
+    "apiMode": true,
+    "bdd.json": 11,
+    "bddEmpty": false,
+    "bddStatus": 0,
+    "bdd_mig.json": 0,
+    "bootReference": "P21260012",
+    "bootVersion": "01.00.03",
+    "clock": Object {
+      "clock": "2020-01-17T13:12:13+01:00",
+      "summerOffset": "ON",
+      "timezone": 60,
+    },
+    "collect.json": 5,
+    "config": "prod",
+    "config.json": 1,
+    "gateway.dat": 0,
+    "geoloc": Object {
+      "latitude": 48897412,
+      "longitude": 2125472,
+    },
+    "groups.json": 6,
+    "info_mig.json": 0,
+    "keyReference": "21260011",
+    "keyVersionHW": "00.00.01",
+    "keyVersionSW": "01.03.03",
+    "keyVersionStack": "01.01.03",
+    "mac": "001A2502951F",
+    "mainId": "6414118",
+    "mainReference": "21260010",
+    "mainVersionHW": "00.00.01",
+    "mainVersionSW": "02.02.53",
+    "mom.json": 0,
+    "mom_api.json": 105,
+    "moments": Object {
+      "suspend": Object {
+        "to": 0,
+      },
+    },
+    "passwordEmpty": false,
+    "productName": "TYDOM2",
+    "scenario.json": 5,
+    "site.json": 149,
+    "updateAvailable": false,
+    "urlMediation": "mediation.tydom.com",
+  },
   "headers": Map {
     "server" => "Tydom-001A2502951F",
     "uri-origin" => "/info",
@@ -10,7 +56,6 @@ Object {
     "transfer-encoding" => "chunked",
     "transac-id" => "request_1",
   },
-  "json": [Function],
   "method": "GET",
   "status": 200,
   "type": "response",
@@ -20,17 +65,37 @@ Object {
 
 exports[`parseIncomingMessage should properly parse a updatedDevicesData response 1`] = `
 Object {
-  "body": "[{\\"id\\":1531745761,\\"endpoints\\":[{\\"id\\":1531745761,\\"error\\":0,\\"data\\":[{\\"name\\":\\"level\\",\\"validity\\":\\"upToDate\\",\\"value\\":100},{\\"name\\":\\"onFavPos\\",\\"validity\\":\\"upToDate\\",\\"value\\":false}]}]}]
-",
+  "body": Array [
+    Object {
+      "endpoints": Array [
+        Object {
+          "data": Array [
+            Object {
+              "name": "level",
+              "validity": "upToDate",
+              "value": 100,
+            },
+            Object {
+              "name": "onFavPos",
+              "validity": "upToDate",
+              "value": false,
+            },
+          ],
+          "error": 0,
+          "id": 1531745761,
+        },
+      ],
+      "id": 1531745761,
+    },
+  ],
   "headers": Map {
     "server" => "Tydom-001A2502951F",
     "content-type" => "application/json",
     "transfer-encoding" => "chunked",
   },
-  "json": [Function],
   "method": "PUT",
   "status": 200,
-  "type": "response",
+  "type": "request",
   "uri": "/devices/data",
 }
 `;

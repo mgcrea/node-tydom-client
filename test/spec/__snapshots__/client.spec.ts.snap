@@ -19,6 +19,7 @@ Array [
   0,
   undefined,
   Object {
+    "closeOnExit": true,
     "hostname": "mediation.tydom.com",
     "keepAlive": true,
     "password": "MyPassw0rd!",

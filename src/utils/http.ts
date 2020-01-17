@@ -1,10 +1,10 @@
 import {HTTPParser} from 'http-parser-js';
-import {castTydomMessage} from './tydom';
+import {castTydomMessage, TydomHttpMessage} from './tydom';
 import {getRequestCounter, getRandomBytes, md5} from './crypto';
 
 export const parser = new HTTPParser(HTTPParser.RESPONSE);
 
-export const parseIncomingMessage = async (data: Buffer): Promise<Record<string, unknown>> => {
+export const parseIncomingMessage = async (data: Buffer): Promise<TydomHttpMessage> => {
   return new Promise((resolve, reject) => {
     try {
       const responseFirstBytes = Buffer.from('HTTP/1.1 200 OK\r\n');

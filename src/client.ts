@@ -19,6 +19,7 @@ const debug = createDebug('tydom-client');
 
 export interface TydomClientConnectOptions {
   keepAlive?: boolean;
+  closeOnExit?: boolean;
 }
 
 export interface TydomClientOptions extends TydomClientConnectOptions {
@@ -28,10 +29,14 @@ export interface TydomClientOptions extends TydomClientConnectOptions {
   userAgent?: string;
 }
 
-export const defaultOptions: Required<Pick<TydomClientOptions, 'userAgent' | 'hostname' | 'keepAlive'>> = {
+export const defaultOptions: Required<Pick<
+  TydomClientOptions,
+  'userAgent' | 'hostname' | 'keepAlive' | 'closeOnExit'
+>> = {
   hostname: 'mediation.tydom.com',
   userAgent: USER_AGENT,
-  keepAlive: false
+  keepAlive: true,
+  closeOnExit: true
 };
 
 export const createClient = (options: TydomClientOptions) => new TydomClient(options);
@@ -55,7 +60,7 @@ export default class TydomClient extends EventEmitter {
     return `${prefix}${this.nonce}`;
   }
   public async connect() {
-    const {username, password, hostname, userAgent, keepAlive} = this.config;
+    const {username, password, hostname, userAgent, keepAlive, closeOnExit} = this.config;
     const isRemote = hostname === 'mediation.tydom.com';
     const uri = `/mediation/client?mac=${username}&appli=1`;
     const headers = {'User-Agent': userAgent};
@@ -77,6 +82,9 @@ export default class TydomClient extends EventEmitter {
             this.get('/ping');
           }, 30e3);
         }
+        if (closeOnExit) {
+          this.attachExitListeners();
+        }
         resolve(socket);
       });
       socket.on('message', async (data: Buffer) => {
@@ -87,7 +95,7 @@ export default class TydomClient extends EventEmitter {
         );
         const parsedMessage = await parseIncomingMessage(isRemote ? data.slice('\x02'.length) : data);
         const requestId = parsedMessage.headers.get('transac-id');
-        if (this.pool.has(requestId)) {
+        if (requestId && this.pool.has(requestId)) {
           try {
             this.pool.get(requestId)!.resolve(parsedMessage);
           } catch (err) {
@@ -159,5 +167,28 @@ export default class TydomClient extends EventEmitter {
   }
   public async post(url: string, body: {[s: string]: any} = {}) {
     return await this.request({url, method: 'POST', body: JSON.stringify(body)});
+  }
+  private attachExitListeners() {
+    const gracefullyClose = async () => {
+      const {socket} = this;
+      if (!socket) {
+        process.exit(0);
+        return;
+      }
+      socket.once('close', () => {
+        process.nextTick(() => process.exit(0));
+      });
+      switch (socket.readyState) {
+        case socket.CONNECTING:
+        case socket.OPEN:
+          socket.close();
+        case socket.CLOSING:
+        case socket.CLOSED:
+        default:
+          return;
+      }
+    };
+    process.on('SIGTERM', gracefullyClose);
+    process.on('SIGINT', gracefullyClose);
   }
 }

@@ -14,10 +14,15 @@ export type CastTydomMessageProps = {
 
 export type TydomHttpMessage = CastTydomMessageProps & {
   status: number;
-  json: () => Promise<TydomResponse>;
 };
 
-export const castTydomMessage = async ({type, uri, method, body, headers}: CastTydomMessageProps): TydomHttpMessage => {
+export const castTydomMessage = async ({
+  type,
+  uri,
+  method,
+  body,
+  headers
+}: CastTydomMessageProps): Promise<TydomHttpMessage> => {
   const hasBody = body.length > 0;
   const shouldBeJson = headers.has('content-type') && headers.get('content-type')!.includes('application/json');
   const isActuallyHtml = hasBody && body.startsWith('<!doctype html>');
