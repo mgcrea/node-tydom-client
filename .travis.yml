@@ -14,5 +14,6 @@ before_script:
 script:
   - yarn run spec:coverage
   - yarn run lint
+  - yarn run build
 after_script:
   - cat coverage/lcov.info | codecov
