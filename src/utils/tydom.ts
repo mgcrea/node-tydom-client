@@ -12,8 +12,9 @@ export type CastTydomMessageProps = {
   headers: Map<string, string>;
 };
 
-export type TydomHttpMessage = CastTydomMessageProps & {
+export type TydomHttpMessage = Pick<CastTydomMessageProps, 'type' | 'uri' | 'method' | 'headers'> & {
   status: number;
+  body: Record<string, unknown>;
 };
 
 export const castTydomMessage = async ({

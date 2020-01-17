@@ -144,7 +144,7 @@ export default class TydomClient extends EventEmitter {
     debug(`Sending request "${rawHttpRequest.replace(/\r\n/g, '\\r\\n')}"`);
     return new Promise((resolve, reject) => {
       try {
-        const resolveBody = (res: TydomHttpMessage) => res.body;
+        const resolveBody = (res: TydomHttpMessage) => resolve(res.body);
         this.pool.set(requestId, {resolve: resolveBody, reject});
         this.send(rawHttpRequest);
       } catch (err) {
@@ -185,6 +185,9 @@ export default class TydomClient extends EventEmitter {
       }
     };
     process.on('SIGTERM', gracefullyClose);
+    // Handle Ctrl+C
     process.on('SIGINT', gracefullyClose);
+    // Handle nodemon restarts
+    process.on('SIGUSR2', gracefullyClose);
   }
 }
