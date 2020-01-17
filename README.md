@@ -70,6 +70,10 @@ const client = createClient({username, password, hostname});
       value: 100
     }
   ]);
+  // Listen for external messages
+  client.on('message', message => {
+    console.dir({message});
+  });
 })();
 ```
 
