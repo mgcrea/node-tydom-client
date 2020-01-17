@@ -2,7 +2,7 @@ import fetch from 'node-fetch';
 import assert from 'assert';
 import {DigestAccessAuthenticationFields} from './http';
 
-export type TydomResponse = Record<string, unknown>;
+export type TydomResponse = Record<string, unknown> | Array<Record<string, unknown>>;
 
 export type CastTydomMessageProps = {
   type: 'request' | 'response';
@@ -14,7 +14,7 @@ export type CastTydomMessageProps = {
 
 export type TydomHttpMessage = Pick<CastTydomMessageProps, 'type' | 'uri' | 'method' | 'headers'> & {
   status: number;
-  body: Record<string, unknown> | Array<Record<string, unknown>>;
+  body: TydomResponse;
 };
 
 export const castTydomMessage = async ({
