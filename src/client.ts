@@ -82,6 +82,7 @@ export default class TydomClient extends EventEmitter {
           this.attachExitListeners();
         }
         resolve(socket);
+        this.emit('connect');
       });
       socket.on('message', async (data: Buffer) => {
         debug(
@@ -106,6 +107,7 @@ export default class TydomClient extends EventEmitter {
       });
       socket.on('close', () => {
         debug(`Tydom socket closed for hostname="${hostname}"`);
+        this.emit('disconnect');
       });
       socket.on('error', err => {
         debug(`Tydom socket error for hostname="${hostname}"`);
