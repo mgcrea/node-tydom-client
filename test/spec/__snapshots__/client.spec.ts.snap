@@ -10,6 +10,7 @@ Array [
   "nonce",
   "pool",
   "keepAliveInterval",
+  "reconnectInterval",
 ]
 `;
 
@@ -23,12 +24,14 @@ Array [
     "hostname": "mediation.tydom.com",
     "keepAlive": true,
     "password": "MyPassw0rd!",
+    "reconnectInterval": 10000,
     "userAgent": "Tydom/192 CFNetwork/1120 Darwin/19.0.0",
     "username": "001A25123456",
   },
   undefined,
   0,
   Map {},
+  undefined,
   undefined,
 ]
 `;
