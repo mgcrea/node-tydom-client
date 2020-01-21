@@ -1,5 +1,5 @@
 import createDebug from 'debug';
-import assert from 'assert';
+import {assert} from './utils/assert';
 import {EventEmitter} from 'events';
 import WebSocket from 'ws';
 import {USER_AGENT} from './config/env';
@@ -23,16 +23,18 @@ export interface TydomClientOptions extends TydomClientConnectOptions {
   password: string;
   hostname?: string;
   userAgent?: string;
+  reconnectInterval?: number;
 }
 
 export const defaultOptions: Required<Pick<
   TydomClientOptions,
-  'userAgent' | 'hostname' | 'keepAlive' | 'closeOnExit'
+  'userAgent' | 'hostname' | 'keepAlive' | 'closeOnExit' | 'reconnectInterval'
 >> = {
   hostname: 'mediation.tydom.com',
   userAgent: USER_AGENT,
   keepAlive: true,
-  closeOnExit: true
+  closeOnExit: true,
+  reconnectInterval: 10 * 1000
 };
 
 export const createClient = (options: TydomClientOptions) => new TydomClient(options);
@@ -45,6 +47,7 @@ export default class TydomClient extends EventEmitter {
   private nonce: number;
   private pool: Map<string, PromiseExecutor>;
   private keepAliveInterval?: NodeJS.Timeout;
+  private reconnectInterval?: NodeJS.Timeout;
   constructor(options: TydomClientOptions) {
     super();
     this.config = {...defaultOptions, ...options};
@@ -56,7 +59,7 @@ export default class TydomClient extends EventEmitter {
     return `${prefix}${this.nonce}`;
   }
   public async connect() {
-    const {username, password, hostname, userAgent, keepAlive, closeOnExit} = this.config;
+    const {username, password, hostname, userAgent, keepAlive, closeOnExit, reconnectInterval} = this.config;
     const isRemote = hostname === 'mediation.tydom.com';
     const uri = `/mediation/client?mac=${username}&appli=1`;
     const headers = {'User-Agent': userAgent};
@@ -73,6 +76,10 @@ export default class TydomClient extends EventEmitter {
       socket.on('open', () => {
         debug(`Tydom socket opened for hostname="${hostname}"`);
         this.socket = socket;
+        if (this.reconnectInterval) {
+          clearInterval(this.reconnectInterval);
+          delete this.reconnectInterval;
+        }
         if (keepAlive) {
           this.keepAliveInterval = setInterval(() => {
             this.get('/ping');
@@ -108,6 +115,11 @@ export default class TydomClient extends EventEmitter {
       socket.on('close', () => {
         debug(`Tydom socket closed for hostname="${hostname}"`);
         this.emit('disconnect');
+        if (reconnectInterval > 0 && !this.reconnectInterval) {
+          this.reconnectInterval = setInterval(() => {
+            this.connect();
+          }, reconnectInterval);
+        }
       });
       socket.on('error', err => {
         debug(`Tydom socket error for hostname="${hostname}"`);
@@ -125,6 +137,9 @@ export default class TydomClient extends EventEmitter {
   }
   private send(rawHttpRequest: string) {
     assert(this.socket instanceof WebSocket, 'Required socket instance, please use connect() first');
+    if ([WebSocket.CLOSING, WebSocket.CLOSED].includes(this.socket.readyState)) {
+      throw new Error('Socket instance is closing/closed, please reconnect with connect() first');
+    }
     const {hostname} = this.config;
     const isRemote = hostname === 'mediation.tydom.com';
     this.socket!.send(Buffer.from(isRemote ? `\x02${rawHttpRequest}` : rawHttpRequest, 'ascii'));

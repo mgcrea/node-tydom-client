@@ -13,7 +13,9 @@ before_script:
   - yarn global add codecov
 script:
   - yarn run spec:coverage
+  # - yarn run typecheck
   - yarn run lint
+  - yarn run pretty
   - yarn run build
 after_script:
   - cat coverage/lcov.info | codecov
