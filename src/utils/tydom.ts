@@ -25,7 +25,8 @@ export const castTydomMessage = async ({
   headers
 }: CastTydomMessageProps): Promise<TydomHttpMessage> => {
   const hasBody = body.length > 0;
-  const shouldBeJson = headers.has('content-type') && headers.get('content-type')!.includes('application/json');
+  const shouldBeJson =
+    headers.has('content-type') && (headers.get('content-type') as string).includes('application/json');
   const isActuallyHtml = hasBody && body.startsWith('<!doctype html>');
   const status = isActuallyHtml ? 400 : 200;
   const json = async () => {
