@@ -23,29 +23,31 @@ export interface TydomClientOptions extends TydomClientConnectOptions {
   password: string;
   hostname?: string;
   userAgent?: string;
+  requestTimeout?: number;
   reconnectInterval?: number;
 }
 
 export const defaultOptions: Required<Pick<
   TydomClientOptions,
-  'userAgent' | 'hostname' | 'keepAlive' | 'closeOnExit' | 'reconnectInterval'
+  'userAgent' | 'hostname' | 'keepAlive' | 'closeOnExit' | 'reconnectInterval' | 'requestTimeout'
 >> = {
   hostname: 'mediation.tydom.com',
   userAgent: USER_AGENT,
   keepAlive: true,
   closeOnExit: true,
+  requestTimeout: 5 * 1000,
   reconnectInterval: 10 * 1000
 };
 
 export const createClient = (options: TydomClientOptions) => new TydomClient(options);
 
-type PromiseExecutor = {resolve: (value?: any) => void; reject: (reason?: any) => void};
+type ResponseHandler = {resolve: (value?: any) => void; reject: (reason?: any) => void; timeout: NodeJS.Timeout | null};
 
 export default class TydomClient extends EventEmitter {
   private config: Required<TydomClientOptions>;
   private socket?: WebSocket;
   private nonce: number;
-  private pool: Map<string, PromiseExecutor>;
+  private pool: Map<string, ResponseHandler>;
   private keepAliveInterval?: NodeJS.Timeout;
   private reconnectInterval?: NodeJS.Timeout;
   constructor(options: TydomClientOptions) {
@@ -72,6 +74,7 @@ export default class TydomClient extends EventEmitter {
       headers: {...headers, Authorization: authHeader}
     };
     return new Promise((resolve, reject) => {
+      debug(`Attempting to open new socket for hostname="${hostname}"`);
       const socket = new WebSocket(`https://${hostname}${uri}`, websocketOptions);
       socket.on('open', () => {
         debug(`Tydom socket opened for hostname="${hostname}"`);
@@ -100,10 +103,15 @@ export default class TydomClient extends EventEmitter {
         const parsedMessage = await parseIncomingMessage(isRemote ? data.slice('\x02'.length) : data);
         const requestId = parsedMessage.headers.get('transac-id');
         if (requestId && this.pool.has(requestId)) {
+          const responseHandler = this.pool.get(requestId) as ResponseHandler;
+          // Clear timeout watchdog
+          if (responseHandler.timeout) {
+            clearTimeout(responseHandler.timeout);
+          }
           try {
-            this.pool.get(requestId)!.resolve(parsedMessage);
+            responseHandler.resolve(parsedMessage);
           } catch (err) {
-            this.pool.get(requestId)!.reject(err);
+            responseHandler.reject(err);
           } finally {
             this.pool.delete(requestId);
           }
@@ -117,6 +125,7 @@ export default class TydomClient extends EventEmitter {
         this.emit('disconnect');
         if (reconnectInterval > 0 && !this.reconnectInterval) {
           this.reconnectInterval = setInterval(() => {
+            debug(`About to attempt reconnect for hostname="${hostname}"`);
             this.connect();
           }, reconnectInterval);
         }
@@ -142,7 +151,7 @@ export default class TydomClient extends EventEmitter {
     }
     const {hostname} = this.config;
     const isRemote = hostname === 'mediation.tydom.com';
-    this.socket!.send(Buffer.from(isRemote ? `\x02${rawHttpRequest}` : rawHttpRequest, 'ascii'));
+    this.socket.send(Buffer.from(isRemote ? `\x02${rawHttpRequest}` : rawHttpRequest, 'ascii'));
   }
   private async request({
     url,
@@ -150,6 +159,7 @@ export default class TydomClient extends EventEmitter {
     headers: extraHeaders = {},
     body
   }: BuildRawHttpRequestOptions): Promise<TydomResponse> {
+    const {requestTimeout} = this.config;
     const requestId = this.uniqueId('request_');
     const headers = {
       ...extraHeaders,
@@ -162,7 +172,14 @@ export default class TydomClient extends EventEmitter {
     return new Promise((resolve, reject) => {
       try {
         const resolveBody = (res: TydomHttpMessage) => resolve(res.body);
-        this.pool.set(requestId, {resolve: resolveBody, reject});
+        const timeout =
+          requestTimeout > 0
+            ? setTimeout(() => {
+                debug(`Timeout for request "${rawHttpRequest.replace(/\r\n/g, '\\r\\n')}"`);
+                this.close();
+              }, requestTimeout)
+            : null;
+        this.pool.set(requestId, {resolve: resolveBody, reject, timeout});
         this.send(rawHttpRequest);
       } catch (err) {
         reject(err);
@@ -186,7 +203,6 @@ export default class TydomClient extends EventEmitter {
       const {socket} = this;
       if (!socket) {
         process.exit(0);
-        return;
       }
       socket.once('close', () => {
         process.nextTick(() => process.exit(0));
@@ -194,7 +210,7 @@ export default class TydomClient extends EventEmitter {
       switch (socket.readyState) {
         case socket.CONNECTING:
         case socket.OPEN:
-          socket.close();
+          this.close();
         case socket.CLOSING:
         case socket.CLOSED:
         default:

@@ -12,8 +12,14 @@ import {AssertionError} from 'assert';
 //   }
 // };
 
-export const assert: (value: unknown, message?: string) => asserts value = (value: unknown, message?: string) => {
-  if (!value) {
+// export const assert: (value: unknown, message?: string) => asserts value = (value: unknown, message?: string) => {
+//   if (!value) {
+//     throw new AssertionError({message});
+//   }
+// };
+
+export function assert(condition: unknown, message?: string): asserts condition {
+  if (!condition) {
     throw new AssertionError({message});
   }
-};
+}
