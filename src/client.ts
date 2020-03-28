@@ -1,15 +1,16 @@
-import {assert} from './utils/assert';
 import {EventEmitter} from 'events';
-import WebSocket from 'ws';
+import {debounce, get} from 'lodash';
 import debug from 'src/utils/debug';
+import WebSocket from 'ws';
 import {USER_AGENT} from './config/env';
+import {assert} from './utils/assert';
 import {
   buildRawHttpRequest,
-  parseIncomingMessage,
   BuildRawHttpRequestOptions,
-  computeDigestAccessAuthenticationHeader
+  computeDigestAccessAuthenticationHeader,
+  parseIncomingMessage
 } from './utils/http';
-import {getTydomDigestAccessAuthenticationFields, TydomResponse, TydomHttpMessage} from './utils/tydom';
+import {getTydomDigestAccessAuthenticationFields, TydomHttpMessage, TydomResponse} from './utils/tydom';
 
 export interface TydomClientConnectOptions {
   keepAlive?: boolean;
@@ -23,18 +24,20 @@ export interface TydomClientOptions extends TydomClientConnectOptions {
   userAgent?: string;
   requestTimeout?: number;
   reconnectInterval?: number;
+  followUpDebounce?: number;
 }
 
 export const defaultOptions: Required<Pick<
   TydomClientOptions,
-  'userAgent' | 'hostname' | 'keepAlive' | 'closeOnExit' | 'reconnectInterval' | 'requestTimeout'
+  'userAgent' | 'hostname' | 'keepAlive' | 'closeOnExit' | 'reconnectInterval' | 'requestTimeout' | 'followUpDebounce'
 >> = {
   hostname: 'mediation.tydom.com',
   userAgent: USER_AGENT,
   keepAlive: true,
   closeOnExit: true,
   requestTimeout: 5 * 1000,
-  reconnectInterval: 10 * 1000
+  reconnectInterval: 10 * 1000,
+  followUpDebounce: 400
 };
 
 export const createClient = (options: TydomClientOptions) => new TydomClient(options);
@@ -46,7 +49,6 @@ export default class TydomClient extends EventEmitter {
   private socket?: WebSocket;
   private lastUniqueId: number;
   private pool: Map<string, ResponseHandler> = new Map();
-  private cdataPool: Map<string, TydomHttpMessage> = new Map();
   private keepAliveInterval?: NodeJS.Timeout;
   private reconnectInterval?: NodeJS.Timeout;
   constructor(options: TydomClientOptions) {
@@ -102,48 +104,24 @@ export default class TydomClient extends EventEmitter {
             .toString('utf8')
             .replace(/(.+)\r\n/g, '  $1\r\n')}`
         );
-        debug(
-          `Tydom socket ${data.length}-sized message received for hostname="${hostname}":\n${data.toString('hex')}`
-        );
         const parsedMessage = await parseIncomingMessage(isRemote ? data.slice('\x02'.length) : data);
-        const {uri, method, body, headers} = parsedMessage;
-        const requestId = headers.get('transac-id') as string;
-        const isCommandFirstReply = uri.endsWith('/cdata') && method === 'GET' && headers.get('content-length') === '0';
-        const isCommandSecondReply = uri === '/devices/cdata' && method === 'PUT';
-        if (isCommandFirstReply) {
-          this.cdataPool.set(requestId, parsedMessage);
-          // Discard first empty reply
-          return;
-        } else if (requestId && this.pool.has(requestId)) {
+        const requestId = parsedMessage.headers.get('transac-id') as string;
+        if (requestId && this.pool.has(requestId)) {
           const responseHandler = this.pool.get(requestId) as ResponseHandler;
           // Clear timeout watchdog
           if (responseHandler.timeout) {
             clearTimeout(responseHandler.timeout);
           }
           try {
-            if (isCommandSecondReply) {
-              const lastParsedMessage = this.cdataPool.get(requestId);
-              assert(
-                Array.isArray(body) &&
-                  body.length === 1 &&
-                  Array.isArray(body[0].endpoints) &&
-                  body[0].endpoints.length === 1 &&
-                  Array.isArray(body[0].endpoints[0].cdata) &&
-                  body[0].endpoints[0].cdata.length === 1 &&
-                  body[0].endpoints[0].cdata[0].values,
-                `Unexpected cdata body="${JSON.stringify(body)}"`
-              );
-              const leafBody = body[0].endpoints[0].cdata[0].values;
-              // Return first reply with overriden body
-              responseHandler.resolve({...lastParsedMessage, body: leafBody});
-            } else {
-              responseHandler.resolve(parsedMessage);
-            }
+            responseHandler.resolve(parsedMessage);
           } catch (err) {
             responseHandler.reject(err);
           } finally {
             this.pool.delete(requestId);
           }
+        } else if (requestId) {
+          // Relay follow-up
+          this.emit(requestId, parsedMessage);
         } else {
           // Relay message on client
           this.emit('message', parsedMessage);
@@ -159,7 +137,7 @@ export default class TydomClient extends EventEmitter {
           }, reconnectInterval);
         }
       });
-      socket.on('error', err => {
+      socket.on('error', (err) => {
         debug(`Tydom socket error for hostname="${hostname}"`);
         reject(err);
       });
@@ -182,14 +160,11 @@ export default class TydomClient extends EventEmitter {
     const isRemote = hostname === 'mediation.tydom.com';
     this.socket.send(Buffer.from(isRemote ? `\x02${rawHttpRequest}` : rawHttpRequest, 'ascii'));
   }
-  private async request<T extends TydomResponse = TydomResponse>({
-    url,
-    method,
-    headers: extraHeaders = {},
-    body
-  }: BuildRawHttpRequestOptions): Promise<T> {
+  private async request<T extends TydomResponse = TydomResponse>(
+    {url, method, headers: extraHeaders = {}, body}: BuildRawHttpRequestOptions,
+    requestId: string = this.uniqueId()
+  ): Promise<T> {
     const {requestTimeout} = this.config;
-    const requestId = this.uniqueId();
     const headers = {
       ...extraHeaders,
       'content-length': `${body ? body.length : 0}`,
@@ -226,6 +201,32 @@ export default class TydomClient extends EventEmitter {
   }
   public async post<T extends TydomResponse = TydomResponse>(url: string, body: {[s: string]: any} = {}) {
     return await this.request<T>({url, method: 'POST', body: JSON.stringify(body)});
+  }
+
+  public async command<T extends TydomResponse = TydomResponse>(url: string) {
+    const {followUpDebounce} = this.config;
+    const matches = url.match(/\/devices\/(\d+)\/endpoints\/(\d+)\/cdata\?name=(\w*)/i);
+    assert(matches && matches.length === 4, 'Invalid command url');
+    // const [_, deviceId, endpointId, commandName] = matches;
+    const requestId = this.uniqueId();
+    const results: TydomResponse[] = [];
+    return new Promise(async (resolve, reject) => {
+      const debounceResolve = debounce(() => resolve(results), followUpDebounce);
+      this.on(requestId, ({body}: TydomHttpMessage) => {
+        const values = get(body, '0.endpoints.0.cdata.0.values');
+        if (values) {
+          results.push(values);
+        } else {
+          debug(`Unexpected command follow-up body="${body}"`);
+        }
+        debounceResolve();
+      });
+      try {
+        await this.request<T>({url, method: 'GET'}, requestId);
+      } catch (err) {
+        reject(err);
+      }
+    });
   }
   private attachExitListeners() {
     const gracefullyClose = async () => {

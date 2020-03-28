@@ -9,7 +9,6 @@ Array [
   "socket",
   "lastUniqueId",
   "pool",
-  "cdataPool",
   "keepAliveInterval",
   "reconnectInterval",
 ]
@@ -22,6 +21,7 @@ Array [
   undefined,
   Object {
     "closeOnExit": true,
+    "followUpDebounce": 400,
     "hostname": "mediation.tydom.com",
     "keepAlive": true,
     "password": "MyPassw0rd!",
@@ -32,7 +32,6 @@ Array [
   },
   undefined,
   0,
-  Map {},
   Map {},
   undefined,
   undefined,

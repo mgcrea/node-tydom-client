@@ -32,10 +32,7 @@ export const parseIncomingMessage = async (data: Buffer): Promise<TydomHttpMessa
           resolve(castTydomMessage({type: 'response', method: 'GET', uri, body, headers}));
           return;
         }
-        const [method, uri] = data
-          .slice(0, data.indexOf('\r\n'))
-          .toString('utf8')
-          .split(' ');
+        const [method, uri] = data.slice(0, data.indexOf('\r\n')).toString('utf8').split(' ');
         resolve(castTydomMessage({type: 'request', method, uri, body, headers}));
       };
       parser.execute(buffer);

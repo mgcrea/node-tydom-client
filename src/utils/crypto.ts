@@ -1,10 +1,6 @@
 import crypto from 'crypto';
 
-export const md5 = (data: crypto.BinaryLike): Buffer =>
-  crypto
-    .createHash('md5')
-    .update(data)
-    .digest();
+export const md5 = (data: crypto.BinaryLike): Buffer => crypto.createHash('md5').update(data).digest();
 
 export const getRandomBytes = async (size = 256): Promise<Buffer> => {
   return new Promise((resolve, reject) => {
