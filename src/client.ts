@@ -182,12 +182,12 @@ export default class TydomClient extends EventEmitter {
     const isRemote = hostname === 'mediation.tydom.com';
     this.socket.send(Buffer.from(isRemote ? `\x02${rawHttpRequest}` : rawHttpRequest, 'ascii'));
   }
-  private async request({
+  private async request<T extends TydomResponse = TydomResponse>({
     url,
     method,
     headers: extraHeaders = {},
     body
-  }: BuildRawHttpRequestOptions): Promise<TydomResponse> {
+  }: BuildRawHttpRequestOptions): Promise<T> {
     const {requestTimeout} = this.config;
     const requestId = this.uniqueId();
     const headers = {
@@ -200,7 +200,7 @@ export default class TydomClient extends EventEmitter {
     debug(`Sending request "${rawHttpRequest.replace(/\r\n/g, '\\r\\n')}"`);
     return new Promise((resolve, reject) => {
       try {
-        const resolveBody = (res: TydomHttpMessage) => resolve(res.body);
+        const resolveBody = (res: TydomHttpMessage) => resolve(res.body as T);
         const timeout =
           requestTimeout > 0
             ? setTimeout(() => {
@@ -215,17 +215,17 @@ export default class TydomClient extends EventEmitter {
       }
     });
   }
-  public async get(url: string) {
-    return await this.request({url, method: 'GET'});
+  public async get<T extends TydomResponse = TydomResponse>(url: string) {
+    return await this.request<T>({url, method: 'GET'});
   }
-  public async delete(url: string) {
-    return await this.request({url, method: 'DELETE'});
+  public async delete<T extends TydomResponse = TydomResponse>(url: string) {
+    return await this.request<T>({url, method: 'DELETE'});
   }
-  public async put(url: string, body: {[s: string]: any} = {}) {
-    return await this.request({url, method: 'PUT', body: JSON.stringify(body)});
+  public async put<T extends TydomResponse = TydomResponse>(url: string, body: {[s: string]: any} = {}) {
+    return await this.request<T>({url, method: 'PUT', body: JSON.stringify(body)});
   }
-  public async post(url: string, body: {[s: string]: any} = {}) {
-    return await this.request({url, method: 'POST', body: JSON.stringify(body)});
+  public async post<T extends TydomResponse = TydomResponse>(url: string, body: {[s: string]: any} = {}) {
+    return await this.request<T>({url, method: 'POST', body: JSON.stringify(body)});
   }
   private attachExitListeners() {
     const gracefullyClose = async () => {
