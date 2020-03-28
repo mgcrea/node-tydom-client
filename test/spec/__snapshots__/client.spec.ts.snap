@@ -7,8 +7,9 @@ Array [
   "_maxListeners",
   "config",
   "socket",
-  "nonce",
+  "lastUniqueId",
   "pool",
+  "cdataPool",
   "keepAliveInterval",
   "reconnectInterval",
 ]
@@ -31,6 +32,7 @@ Array [
   },
   undefined,
   0,
+  Map {},
   Map {},
   undefined,
   undefined,
