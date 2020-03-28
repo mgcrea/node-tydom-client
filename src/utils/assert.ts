@@ -1,4 +1,5 @@
 import {AssertionError} from 'assert';
+import {TydomResponse} from './tydom';
 
 // function assert(value: unknown): asserts value {
 //   if (value === undefined) {

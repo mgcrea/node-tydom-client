@@ -1,7 +1,7 @@
-import createDebug from 'debug';
 import {assert} from './utils/assert';
 import {EventEmitter} from 'events';
 import WebSocket from 'ws';
+import debug from 'src/utils/debug';
 import {USER_AGENT} from './config/env';
 import {
   buildRawHttpRequest,
@@ -10,8 +10,6 @@ import {
   computeDigestAccessAuthenticationHeader
 } from './utils/http';
 import {getTydomDigestAccessAuthenticationFields, TydomResponse, TydomHttpMessage} from './utils/tydom';
-
-const debug = createDebug('tydom-client');
 
 export interface TydomClientConnectOptions {
   keepAlive?: boolean;
@@ -46,19 +44,23 @@ type ResponseHandler = {resolve: (value?: any) => void; reject: (reason?: any) =
 export default class TydomClient extends EventEmitter {
   private config: Required<TydomClientOptions>;
   private socket?: WebSocket;
-  private nonce: number;
-  private pool: Map<string, ResponseHandler>;
+  private lastUniqueId: number;
+  private pool: Map<string, ResponseHandler> = new Map();
+  private cdataPool: Map<string, TydomHttpMessage> = new Map();
   private keepAliveInterval?: NodeJS.Timeout;
   private reconnectInterval?: NodeJS.Timeout;
   constructor(options: TydomClientOptions) {
     super();
     this.config = {...defaultOptions, ...options};
-    this.nonce = 0;
-    this.pool = new Map();
+    this.lastUniqueId = 0;
   }
-  private uniqueId(prefix = '') {
-    this.nonce++;
-    return `${prefix}${this.nonce}`;
+  private uniqueId() {
+    let nextUniqueId = Date.now();
+    if (nextUniqueId <= this.lastUniqueId) {
+      nextUniqueId = this.lastUniqueId + 1;
+    }
+    this.lastUniqueId = nextUniqueId;
+    return `${nextUniqueId}`;
   }
   public async connect() {
     const {username, password, hostname, userAgent, keepAlive, closeOnExit, reconnectInterval} = this.config;
@@ -100,16 +102,42 @@ export default class TydomClient extends EventEmitter {
             .toString('utf8')
             .replace(/(.+)\r\n/g, '  $1\r\n')}`
         );
+        debug(
+          `Tydom socket ${data.length}-sized message received for hostname="${hostname}":\n${data.toString('hex')}`
+        );
         const parsedMessage = await parseIncomingMessage(isRemote ? data.slice('\x02'.length) : data);
-        const requestId = parsedMessage.headers.get('transac-id');
-        if (requestId && this.pool.has(requestId)) {
+        const {uri, method, body, headers} = parsedMessage;
+        const requestId = headers.get('transac-id') as string;
+        const isCommandFirstReply = uri.endsWith('/cdata') && method === 'GET' && headers.get('content-length') === '0';
+        const isCommandSecondReply = uri === '/devices/cdata' && method === 'PUT';
+        if (isCommandFirstReply) {
+          this.cdataPool.set(requestId, parsedMessage);
+          // Discard first empty reply
+          return;
+        } else if (requestId && this.pool.has(requestId)) {
           const responseHandler = this.pool.get(requestId) as ResponseHandler;
           // Clear timeout watchdog
           if (responseHandler.timeout) {
             clearTimeout(responseHandler.timeout);
           }
           try {
-            responseHandler.resolve(parsedMessage);
+            if (isCommandSecondReply) {
+              const lastParsedMessage = this.cdataPool.get(requestId);
+              assert(
+                Array.isArray(body) &&
+                  body.length === 1 &&
+                  Array.isArray(body[0].endpoints) &&
+                  body[0].endpoints.length === 1 &&
+                  Array.isArray(body[0].endpoints[0].cdata) &&
+                  body[0].endpoints[0].cdata.length === 1,
+                `Unexpected cdata body="${JSON.stringify(body)}"`
+              );
+              const leafBody = body[0].endpoints[0].cdata[0];
+              // Return first reply with overriden body
+              responseHandler.resolve({...lastParsedMessage, body: leafBody});
+            } else {
+              responseHandler.resolve(parsedMessage);
+            }
           } catch (err) {
             responseHandler.reject(err);
           } finally {
@@ -144,7 +172,7 @@ export default class TydomClient extends EventEmitter {
       this.socket.close();
     }
   }
-  private send(rawHttpRequest: string) {
+  send(rawHttpRequest: string) {
     assert(this.socket instanceof WebSocket, 'Required socket instance, please use connect() first');
     if ([WebSocket.CLOSING, WebSocket.CLOSED].includes(this.socket.readyState)) {
       throw new Error('Socket instance is closing/closed, please reconnect with connect() first');
@@ -160,7 +188,7 @@ export default class TydomClient extends EventEmitter {
     body
   }: BuildRawHttpRequestOptions): Promise<TydomResponse> {
     const {requestTimeout} = this.config;
-    const requestId = this.uniqueId('request_');
+    const requestId = this.uniqueId();
     const headers = {
       ...extraHeaders,
       'content-length': `${body ? body.length : 0}`,
