@@ -16,7 +16,7 @@
     "lint": "eslint --ext .ts src/",
     "pretty": "prettier --check '{src,test}/**/*.ts'",
     "typecheck": "tsc --noEmit",
-    "build": "yarn build:source && yarn build:typings",
+    "build": "yarn build:source && yarn build:typings && mv lib/src/config/* lib/config; mv lib/src/utils/* lib/utils; mv lib/src/* lib; rm -rf lib/src",
     "build:source": "babel --source-maps --extensions .js,.ts --out-dir lib/ --delete-dir-on-start --ignore **/__tests__ src/",
     "build:typings": "tsc --declaration",
     "build:watch": "yarn build:source --watch --verbose",
