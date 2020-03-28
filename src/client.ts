@@ -129,10 +129,11 @@ export default class TydomClient extends EventEmitter {
                   Array.isArray(body[0].endpoints) &&
                   body[0].endpoints.length === 1 &&
                   Array.isArray(body[0].endpoints[0].cdata) &&
-                  body[0].endpoints[0].cdata.length === 1,
+                  body[0].endpoints[0].cdata.length === 1 &&
+                  body[0].endpoints[0].cdata[0].values,
                 `Unexpected cdata body="${JSON.stringify(body)}"`
               );
-              const leafBody = body[0].endpoints[0].cdata[0];
+              const leafBody = body[0].endpoints[0].cdata[0].values;
               // Return first reply with overriden body
               responseHandler.resolve({...lastParsedMessage, body: leafBody});
             } else {
