@@ -64,7 +64,7 @@ export default class TydomClient extends EventEmitter {
     this.lastUniqueId = nextUniqueId;
     return `${nextUniqueId}`;
   }
-  public async connect() {
+  public async connect(): Promise<WebSocket> {
     const {username, password, hostname, userAgent, keepAlive, closeOnExit, reconnectInterval} = this.config;
     const isRemote = hostname === 'mediation.tydom.com';
     const uri = `/mediation/client?mac=${username}&appli=1`;
@@ -202,7 +202,7 @@ export default class TydomClient extends EventEmitter {
   public async post<T extends TydomResponse = TydomResponse>(url: string, body: {[s: string]: any} = {}) {
     return await this.request<T>({url, method: 'POST', body: JSON.stringify(body)});
   }
-  public async command<T extends TydomResponse = TydomResponse>(url: string) {
+  public async command<T extends TydomResponse = TydomResponse>(url: string): Promise<T[]> {
     const {followUpDebounce} = this.config;
     const matches = url.match(/\/devices\/(\d+)\/endpoints\/(\d+)\/cdata\?name=(\w*)/i);
     assert(matches && matches.length === 4, 'Invalid command url');
