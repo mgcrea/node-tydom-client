@@ -202,14 +202,13 @@ export default class TydomClient extends EventEmitter {
   public async post<T extends TydomResponse = TydomResponse>(url: string, body: {[s: string]: any} = {}) {
     return await this.request<T>({url, method: 'POST', body: JSON.stringify(body)});
   }
-
   public async command<T extends TydomResponse = TydomResponse>(url: string) {
     const {followUpDebounce} = this.config;
     const matches = url.match(/\/devices\/(\d+)\/endpoints\/(\d+)\/cdata\?name=(\w*)/i);
     assert(matches && matches.length === 4, 'Invalid command url');
     // const [_, deviceId, endpointId, commandName] = matches;
     const requestId = this.uniqueId();
-    const results: TydomResponse[] = [];
+    const results: T[] = [];
     return new Promise(async (resolve, reject) => {
       const debounceResolve = debounce(() => resolve(results), followUpDebounce);
       this.on(requestId, ({body}: TydomHttpMessage) => {
