@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
-import yargs from 'yargs';
-import {dir} from 'src/utils/debug';
-import {createClient} from 'src/client';
 import {promises as fs} from 'fs';
 import {resolve} from 'path';
+import {createClient} from 'src/client';
+import {dir} from 'src/utils/debug';
+import yargs from 'yargs';
 
 type TydomCommandRequestOptions = {
   _: string[];
@@ -109,62 +109,3 @@ yargs
   })
   .demandCommand()
   .help().argv;
-
-/*
-// @cli DEBUG=tydom-client nodemon --watch .idea/index.ts --watch src/ --ext "ts,tsx" --exec "yarn babel-node --extensions ".ts,.tsx" .idea/index.ts"
-
-import {createClient as createTydomClient} from 'tydom-client';
-
-import debug, {dir} from 'src/utils/debug';
-// import {promises as fs} from 'fs';
-import assert from 'src/utils/assert';
-
-const DEFAULT_REQUESTS = '/devices/data,/devices/meta,/devices/cmeta';
-
-const {
-  TYDOM_USERNAME: username,
-  TYDOM_PASSWORD: password,
-  TYDOM_HOSTNAME: hostname = 'mediation.tydom.com',
-  TYDOM_REQUESTS: requests = DEFAULT_REQUESTS
-} = process.env;
-assert(username, 'Required "TYDOM_USERNAME" environment variable');
-assert(password, 'Required "TYDOM_PASSWORD" environment variable');
-assert(hostname, 'Required non empty "TYDOM_HOSTNAME" environment variable when defined');
-const parsedRequests: string[] = requests.split(',');
-assert(parsedRequests.length, 'Required non empty "TYDOM_REQUESTS" environment variable when defined');
-
-const fileOutput = `${__dirname}/tydom_output.json`;
-const client = createTydomClient({username, password, hostname});
-
-const getTydom = async (url: string) => {
-  const result = await client.get('/info');
-  // await fs.writeFile(`${__dirname}/out.json`, JSON.stringify(data, null, 2));
-  dir({url, result});
-};
-
-(async () => {
-  debug(`Connecting to "${hostname}"...`);
-  await client.connect();
-  debug(`Connected to "${hostname}"...`);
-
-  const resuls = await parsedRequests.reduce<Promise<Record<string, unknown>>>(async (promiseSoFar, value) => {
-    const soFar = await promiseSoFar;
-    debug(`Performing GET request to "${value}"...`);
-    soFar[value] = await client.get(value);
-    debug(`Performed GET request to "${value}"...`);
-    return soFar;
-  }, Promise.resolve({}));
-
-  // Save file
-    debug(`Writing output to "${value}"...`);
-    // await fs.writeFile(`${__dirname}/out.json`, JSON.stringify(data, null, 2));
-
-  dir({resuls});
-
-  // await getTydom('/info');
-  // await getTydom('/devices/data');
-  // await getTydom('/devices/meta');
-  // await getTydom('/devices/cmeta');
-})();
-
-*/
