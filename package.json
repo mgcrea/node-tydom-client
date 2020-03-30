@@ -16,11 +16,14 @@
     "lint": "eslint --ext .ts src/",
     "pretty": "prettier --check '{src,test}/**/*.ts'",
     "typecheck": "tsc --noEmit",
-    "build": "yarn build:source && yarn build:typings && mv lib/src/config/* lib/config; mv lib/src/utils/* lib/utils; mv lib/src/* lib; rm -rf lib/src",
+    "build": "yarn build:source && yarn build:typings && rsync -avh --remove-source-files lib/src/* lib/ && rm -rf lib/src",
     "build:source": "babel --source-maps --extensions .js,.ts --out-dir lib/ --delete-dir-on-start --ignore **/__tests__ src/",
     "build:typings": "tsc --declaration",
     "build:watch": "yarn build:source --watch --verbose",
     "prepare": "yarn build"
+  },
+  "bin": {
+    "tydom": "lib/cli/tydom.js"
   },
   "dependencies": {
     "@babel/runtime": "^7.9.2",
@@ -28,7 +31,8 @@
     "http-parser-js": "^0.5.2",
     "lodash": "^4.17.15",
     "node-fetch": "^2.6.0",
-    "ws": "^7.2.3"
+    "ws": "^7.2.3",
+    "yargs": "^15.3.1"
   },
   "devDependencies": {
     "@babel/cli": "^7.8.4",
@@ -47,13 +51,14 @@
     "@types/node": "^13.9.5",
     "@types/node-fetch": "^2.5.5",
     "@types/ws": "^7.2.3",
+    "@types/yargs": "^15.0.4",
     "@typescript-eslint/eslint-plugin": "^2.25.0",
     "@typescript-eslint/parser": "^2.25.0",
     "babel-plugin-module-name-mapper": "^1.2.0",
     "eslint": "^6.8.0",
     "eslint-config-prettier": "^6.10.1",
     "eslint-plugin-prettier": "^3.1.2",
-    "jest": "^25.2.3",
+    "jest": "^25.2.4",
     "nock": "^12.0.3",
     "prettier": "^2.0.2",
     "typescript": "^3.8.3"
