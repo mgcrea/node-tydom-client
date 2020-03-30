@@ -1,6 +1,6 @@
 {
   "name": "tydom-client",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "Easily manage Tydom hardware by Delta Dore from Node.js",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -31,6 +31,7 @@
     "http-parser-js": "^0.5.2",
     "lodash": "^4.17.15",
     "node-fetch": "^2.6.0",
+    "source-map-support": "^0.5.16",
     "ws": "^7.2.3",
     "yargs": "^15.3.1"
   },
