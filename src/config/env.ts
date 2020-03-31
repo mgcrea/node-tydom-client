@@ -1,1 +1,1 @@
-export const USER_AGENT = process.env.TYDOM_USER_AGENT || 'Tydom/192 CFNetwork/1120 Darwin/19.0.0';
+export const USER_AGENT = process.env.TYDOM_USER_AGENT || 'Tydom/255 CFNetwork/1125.2 Darwin/19.4.0';
