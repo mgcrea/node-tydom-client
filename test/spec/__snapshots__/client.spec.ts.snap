@@ -27,7 +27,7 @@ Array [
     "password": "MyPassw0rd!",
     "reconnectInterval": 10000,
     "requestTimeout": 5000,
-    "userAgent": "Tydom/192 CFNetwork/1120 Darwin/19.0.0",
+    "userAgent": "Tydom/255 CFNetwork/1125.2 Darwin/19.4.0",
     "username": "001A25123456",
   },
   undefined,
