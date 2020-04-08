@@ -1,16 +1,36 @@
 import {HTTPParser} from 'http-parser-js';
-import {castTydomMessage, TydomHttpMessage} from './tydom';
-import {getRequestCounter, getRandomBytes, md5} from './crypto';
+import {assert} from './assert';
+import {getRandomBytes, getRequestCounter, md5} from './crypto';
+import {castTydomMessage, TydomBinaryMessage, TydomHttpMessage} from './tydom';
 
-export const parser = new HTTPParser(HTTPParser.RESPONSE);
+const requestParser = new HTTPParser(HTTPParser.REQUEST);
+const responseParser = new HTTPParser(HTTPParser.RESPONSE);
 
-export const parseIncomingMessage = async (data: Buffer): Promise<TydomHttpMessage> => {
+const REQUEST_REGEX = /^([A-Z-]+) ([^ ]+) HTTP\/(\d)\.(\d)$/;
+const RESPONSE_REGEX = /^HTTP\/(\d)\.(\d) (\d{3}) ?(.*)$/;
+
+export type MessageType = 'response' | 'request' | 'binary';
+export const getMessageType = (data: Buffer): {type: MessageType; matches: RegExpMatchArray | null} => {
+  const firstLine = data.slice(0, data.indexOf('\r\n')).toString('ascii');
+  if (RESPONSE_REGEX.test(firstLine)) {
+    return {type: 'response', matches: firstLine.match(RESPONSE_REGEX)};
+  }
+  if (REQUEST_REGEX.test(firstLine)) {
+    return {type: 'request', matches: firstLine.match(REQUEST_REGEX)};
+  }
+  return {type: 'binary', matches: null};
+};
+
+export const parseIncomingMessage = async (data: Buffer): Promise<TydomBinaryMessage | TydomHttpMessage> => {
   return new Promise((resolve, reject) => {
     try {
-      const responseFirstBytes = Buffer.from('HTTP/1.1 200 OK\r\n');
-      const isResponse = data.slice(0, responseFirstBytes.length).equals(responseFirstBytes);
-      // Always parse as a response for http-parser-js
-      const buffer = isResponse ? data : Buffer.concat([responseFirstBytes, data]);
+      const {type: messageType, matches: messageMatches} = getMessageType(data);
+      if (messageType === 'binary') {
+        resolve({type: messageType, data});
+        return;
+      }
+      assert(messageMatches, 'Unexpected empty messageMatches');
+      const parser = messageType === 'response' ? responseParser : requestParser;
       const bodyParts: Buffer[] = [];
       let headers = new Map<string, string>();
       parser.onHeadersComplete = (res: {headers: string[]}) => {
@@ -27,15 +47,27 @@ export const parseIncomingMessage = async (data: Buffer): Promise<TydomHttpMessa
       };
       parser.onMessageComplete = () => {
         const body = Buffer.concat(bodyParts).toString('utf8');
-        if (isResponse) {
-          const uri = headers.get('uri-origin') || '/';
-          resolve(castTydomMessage({type: 'response', method: 'GET', uri, body, headers}));
-          return;
+        switch (messageType) {
+          case 'response': {
+            const method = null;
+            const uri = headers.get('uri-origin') || '/';
+            const status = parseInt(messageMatches[3], 10);
+            resolve(castTydomMessage({type: messageType, method, uri, status, body, headers}));
+            return;
+          }
+          case 'request': {
+            const method = messageMatches[1];
+            const uri = messageMatches[2];
+            const status = null;
+            resolve(castTydomMessage({type: messageType, method, uri, status, body, headers}));
+            return;
+          }
+          default: {
+            throw new Error(`Unhandled messageType=${messageType}`);
+          }
         }
-        const [method, uri] = data.slice(0, data.indexOf('\r\n')).toString('utf8').split(' ');
-        resolve(castTydomMessage({type: 'request', method, uri, body, headers}));
       };
-      parser.execute(buffer);
+      parser.execute(data);
     } catch (err) {
       reject(err);
     }

@@ -1,34 +1,41 @@
-import fetch from 'node-fetch';
 import assert from 'assert';
-import {DigestAccessAuthenticationFields} from './http';
+import fetch from 'node-fetch';
+import {DigestAccessAuthenticationFields, MessageType} from './http';
 
 export type TydomResponse = Record<string, unknown> | Array<Record<string, unknown>>;
 
 export type CastTydomMessageProps = {
-  type: 'request' | 'response';
-  uri: string;
-  method: 'GET' | 'PUT' | string;
   body: string;
   headers: Map<string, string>;
+  method: 'GET' | 'PUT' | string | null;
+  status: number | null;
+  type: MessageType;
+  uri: string;
 };
 
-export type TydomHttpMessage = Pick<CastTydomMessageProps, 'type' | 'uri' | 'method' | 'headers'> & {
-  status: number;
+export type TydomHttpMessage = CastTydomMessageProps & {
   body: TydomResponse;
 };
 
+export type TydomBinaryMessage = {
+  type: MessageType;
+  data: Buffer;
+};
+
 export const castTydomMessage = async ({
-  type,
-  uri,
-  method,
   body,
-  headers
+  headers,
+  method,
+  status,
+  type,
+  uri
 }: CastTydomMessageProps): Promise<TydomHttpMessage> => {
   const hasBody = body.length > 0;
   const shouldBeJson =
     headers.has('content-type') && (headers.get('content-type') as string).includes('application/json');
   const isActuallyHtml = hasBody && body.startsWith('<!doctype html>');
-  const status = isActuallyHtml ? 400 : 200;
+  const isError = shouldBeJson && isActuallyHtml;
+  const actualStatus = status === 200 && isError ? 400 : status;
   const json = async () => {
     if (!hasBody || !shouldBeJson) {
       return {};
@@ -38,7 +45,7 @@ export const castTydomMessage = async ({
     }
     return JSON.parse(body);
   };
-  return {type, uri, method, status, body: await json(), headers};
+  return {type, uri, method, status: actualStatus, body: await json(), headers};
 };
 
 type GetTydomDigestAccessAuthenticationOptions = {

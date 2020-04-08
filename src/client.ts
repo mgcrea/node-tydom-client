@@ -1,16 +1,18 @@
+import chalk from 'chalk';
 import {EventEmitter} from 'events';
 import {debounce, get} from 'lodash';
-import debug from 'src/utils/debug';
-import WebSocket from 'ws';
-import {USER_AGENT} from './config/env';
-import {assert} from './utils/assert';
+import {USER_AGENT} from 'src/config/env';
+import {assert} from 'src/utils/assert';
+import {chalkJson, chalkNumber, chalkString} from 'src/utils/chalk';
+import debug, {dir, toHexString} from 'src/utils/debug';
 import {
   buildRawHttpRequest,
   BuildRawHttpRequestOptions,
   computeDigestAccessAuthenticationHeader,
   parseIncomingMessage
-} from './utils/http';
-import {getTydomDigestAccessAuthenticationFields, TydomHttpMessage, TydomResponse} from './utils/tydom';
+} from 'src/utils/http';
+import {getTydomDigestAccessAuthenticationFields, TydomHttpMessage, TydomResponse} from 'src/utils/tydom';
+import WebSocket from 'ws';
 
 export interface TydomClientConnectOptions {
   keepAlive?: boolean;
@@ -24,12 +26,20 @@ export interface TydomClientOptions extends TydomClientConnectOptions {
   userAgent?: string;
   requestTimeout?: number;
   reconnectInterval?: number;
+  keepAliveInterval?: number;
   followUpDebounce?: number;
 }
 
 export const defaultOptions: Required<Pick<
   TydomClientOptions,
-  'userAgent' | 'hostname' | 'keepAlive' | 'closeOnExit' | 'reconnectInterval' | 'requestTimeout' | 'followUpDebounce'
+  | 'userAgent'
+  | 'hostname'
+  | 'keepAlive'
+  | 'closeOnExit'
+  | 'reconnectInterval'
+  | 'keepAliveInterval'
+  | 'requestTimeout'
+  | 'followUpDebounce'
 >> = {
   hostname: 'mediation.tydom.com',
   userAgent: USER_AGENT,
@@ -37,6 +47,7 @@ export const defaultOptions: Required<Pick<
   closeOnExit: true,
   requestTimeout: 5 * 1000,
   reconnectInterval: 10 * 1000,
+  keepAliveInterval: 15 * 1000,
   followUpDebounce: 400
 };
 
@@ -65,7 +76,16 @@ export default class TydomClient extends EventEmitter {
     return `${nextUniqueId}`;
   }
   public async connect(): Promise<WebSocket> {
-    const {username, password, hostname, userAgent, keepAlive, closeOnExit, reconnectInterval} = this.config;
+    const {
+      username,
+      password,
+      hostname,
+      userAgent,
+      keepAlive,
+      closeOnExit,
+      reconnectInterval,
+      keepAliveInterval
+    } = this.config;
     const isRemote = hostname === 'mediation.tydom.com';
     const uri = `/mediation/client?mac=${username}&appli=1`;
     const headers = {'User-Agent': userAgent};
@@ -78,19 +98,25 @@ export default class TydomClient extends EventEmitter {
       headers: {...headers, Authorization: authHeader}
     };
     return new Promise((resolve, reject) => {
-      debug(`Attempting to open new socket for hostname="${hostname}"`);
+      debug(`Attempting to open new socket for hostname=${chalkString(hostname)}`);
       const socket = new WebSocket(`https://${hostname}${uri}`, websocketOptions);
       socket.on('open', () => {
-        debug(`Tydom socket opened for hostname="${hostname}"`);
+        debug(`Tydom socket opened for hostname=${chalkString(hostname)}`);
         this.socket = socket;
         if (this.reconnectInterval) {
           clearInterval(this.reconnectInterval);
           delete this.reconnectInterval;
         }
         if (keepAlive) {
+          if (this.keepAliveInterval) {
+            debug(`Removing existing keep-alive interval`);
+            clearInterval(this.keepAliveInterval);
+          }
+          const actualKeepAliveInterval = Math.max(1000, keepAliveInterval);
+          debug(`Configuring keep-alive interval of ${chalkNumber(actualKeepAliveInterval / 1000)}s`);
           this.keepAliveInterval = setInterval(() => {
             this.get('/ping');
-          }, 30e3);
+          }, actualKeepAliveInterval);
         }
         if (closeOnExit) {
           this.attachExitListeners();
@@ -100,45 +126,73 @@ export default class TydomClient extends EventEmitter {
       });
       socket.on('message', async (data: Buffer) => {
         debug(
-          `Tydom socket ${data.length}-sized message received for hostname="${hostname}":\n${data
-            .toString('utf8')
-            .replace(/(.+)\r\n/g, '  $1\r\n')}`
+          `Tydom socket received a ${chalkNumber(data.length)}-sized message received for hostname=${chalkString(
+            hostname
+          )}`
         );
-        const parsedMessage = await parseIncomingMessage(isRemote ? data.slice('\x02'.length) : data);
-        const requestId = parsedMessage.headers.get('transac-id') as string;
-        if (requestId && this.pool.has(requestId)) {
-          const responseHandler = this.pool.get(requestId) as ResponseHandler;
-          // Clear timeout watchdog
-          if (responseHandler.timeout) {
-            clearTimeout(responseHandler.timeout);
+        try {
+          const parsedMessage = await parseIncomingMessage(isRemote ? data.slice('\x02'.length) : data);
+          const {type} = parsedMessage;
+          if (type === 'binary') {
+            debug(
+              `Parsed ${chalkNumber(data.length)}-sized received message as ${chalk.blue(type)}:\n${chalk.grey(
+                toHexString(data)
+              )}`
+            );
+            return;
           }
-          try {
-            responseHandler.resolve(parsedMessage);
-          } catch (err) {
-            responseHandler.reject(err);
-          } finally {
-            this.pool.delete(requestId);
+          debug(
+            `Parsed ${chalkNumber(data.length)}-sized received message as ${chalk.blue(type)}:\n${chalk.grey(
+              data.toString('utf8')
+            )}`
+          );
+          const requestId = (parsedMessage as TydomHttpMessage).headers.get('transac-id') as string;
+          if (requestId && this.pool.has(requestId)) {
+            const responseHandler = this.pool.get(requestId) as ResponseHandler;
+            // Clear timeout watchdog
+            if (responseHandler.timeout) {
+              clearTimeout(responseHandler.timeout);
+            }
+            try {
+              responseHandler.resolve(parsedMessage);
+            } catch (err) {
+              responseHandler.reject(err);
+            } finally {
+              this.pool.delete(requestId);
+            }
+          } else if (requestId) {
+            // Relay follow-up
+            this.emit(requestId, parsedMessage);
+          } else if (parsedMessage) {
+            // Relay message on client
+            this.emit('message', parsedMessage);
           }
-        } else if (requestId) {
-          // Relay follow-up
-          this.emit(requestId, parsedMessage);
-        } else {
-          // Relay message on client
-          this.emit('message', parsedMessage);
+        } catch (err) {
+          debug(`Failed to properly parse message hex=[${toHexString(data)}]`);
+          dir(err);
         }
       });
       socket.on('close', () => {
-        debug(`Tydom socket closed for hostname="${hostname}"`);
+        debug(`Tydom socket closed for hostname=${chalkString(hostname)}`);
         this.emit('disconnect');
-        if (reconnectInterval > 0 && !this.reconnectInterval) {
-          this.reconnectInterval = setInterval(() => {
-            debug(`About to attempt reconnect for hostname="${hostname}"`);
-            this.connect();
-          }, reconnectInterval);
+        // Reconnect
+        if (this.reconnectInterval) {
+          debug(`Removing existing reconnect interval`);
+          clearInterval(this.reconnectInterval);
+        }
+        if (!this.isExiting && reconnectInterval > 0) {
+          setTimeout(() => {
+            const actualReconnectInterval = Math.max(1000, reconnectInterval);
+            debug(`Configuring reconnect interval of ${chalkNumber(actualReconnectInterval / 1000)}s`);
+            this.reconnectInterval = setInterval(() => {
+              debug(`About to attempt reconnect for hostname=${chalkString(hostname)}`);
+              this.connect();
+            }, actualReconnectInterval);
+          });
         }
       });
       socket.on('error', (err) => {
-        debug(`Tydom socket error for hostname="${hostname}"`);
+        debug(`Tydom socket error for hostname=${chalkString(hostname)}`);
         reject(err);
       });
     });
@@ -172,7 +226,11 @@ export default class TydomClient extends EventEmitter {
       'transac-id': requestId
     };
     const rawHttpRequest = buildRawHttpRequest({url, method, headers, body});
-    debug(`Sending request "${rawHttpRequest.replace(/\r\n/g, '\\r\\n')}"`);
+    debug(
+      `Writing ${chalkNumber(rawHttpRequest.length)}-sized request on Tydom socket:\n${chalk.grey(
+        rawHttpRequest.replace(/\r\n/g, '\\r\\n')
+      )}`
+    );
     return new Promise((resolve, reject) => {
       try {
         const resolveBody = (res: TydomHttpMessage) => resolve(res.body as T);
@@ -216,7 +274,7 @@ export default class TydomClient extends EventEmitter {
         if (values) {
           results.push(values);
         } else {
-          debug(`Unexpected command follow-up body="${body}"`);
+          debug(`Unexpected command follow-up body="${chalkJson(body)}"`);
         }
         debounceResolve();
       });
@@ -227,19 +285,37 @@ export default class TydomClient extends EventEmitter {
       }
     });
   }
+  private isExiting = false;
   private attachExitListeners() {
     const gracefullyClose = async () => {
       const {socket} = this;
+      // Exit only once
+      if (this.isExiting) {
+        return;
+      }
+      this.isExiting = true;
+      debug('Attempting to gracefully close socket ...');
+      // Properly clear any running setInterval
+      if (this.reconnectInterval) {
+        clearInterval(this.reconnectInterval);
+      }
+      if (this.keepAliveInterval) {
+        clearInterval(this.keepAliveInterval);
+      }
       if (!socket) {
-        process.exit(0);
+        debug('Socket instance not found, exiting!');
+        setTimeout(() => process.exit(0));
+        return;
       }
       socket.once('close', () => {
-        process.nextTick(() => process.exit(0));
+        debug('Socket instance properly closed, exiting!');
+        setTimeout(() => process.exit(0));
       });
       switch (socket.readyState) {
         case socket.CONNECTING:
-        case socket.OPEN:
+        case socket.OPEN: {
           this.close();
+        }
         case socket.CLOSING:
         case socket.CLOSED:
         default:
