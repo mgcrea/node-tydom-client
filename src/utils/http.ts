@@ -90,7 +90,6 @@ export const buildRawHttpRequest = ({url, method, headers = {}, body}: BuildRawH
 };
 
 export type DigestAccessAuthenticationOptions = {
-  uri: string;
   username: string;
   password: string;
 };
@@ -100,6 +99,7 @@ export type DigestAccessAuthenticationFields = {
   qop: string;
   nonce: string;
   opaque?: string;
+  uri: string;
 };
 
 export type DigestAccessAuthenticationHeader = {
@@ -110,8 +110,8 @@ export type DigestAccessAuthenticationHeader = {
 };
 
 export const computeDigestAccessAuthenticationHeader = async (
-  {uri, username, password}: DigestAccessAuthenticationOptions,
-  {realm, qop, nonce /*, opaque */}: DigestAccessAuthenticationFields
+  {username, password}: DigestAccessAuthenticationOptions,
+  {uri, realm, qop, nonce /*, opaque */}: DigestAccessAuthenticationFields
 ): Promise<DigestAccessAuthenticationHeader> => {
   const nc = getRequestCounter();
   const cnonce = (await getRandomBytes(4)).toString('hex');

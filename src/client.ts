@@ -11,7 +11,7 @@ import {
   computeDigestAccessAuthenticationHeader,
   parseIncomingMessage
 } from 'src/utils/http';
-import {getTydomDigestAccessAuthenticationFields, TydomHttpMessage, TydomResponse} from 'src/utils/tydom';
+import {Client, setupGotClient, TydomHttpMessage, TydomResponse, calculateDelay} from 'src/utils/tydom';
 import WebSocket from 'ws';
 
 export interface TydomClientConnectOptions {
@@ -25,28 +25,19 @@ export interface TydomClientOptions extends TydomClientConnectOptions {
   hostname?: string;
   userAgent?: string;
   requestTimeout?: number;
-  reconnectInterval?: number;
   keepAliveInterval?: number;
   followUpDebounce?: number;
 }
 
 export const defaultOptions: Required<Pick<
   TydomClientOptions,
-  | 'userAgent'
-  | 'hostname'
-  | 'keepAlive'
-  | 'closeOnExit'
-  | 'reconnectInterval'
-  | 'keepAliveInterval'
-  | 'requestTimeout'
-  | 'followUpDebounce'
+  'userAgent' | 'hostname' | 'keepAlive' | 'closeOnExit' | 'keepAliveInterval' | 'requestTimeout' | 'followUpDebounce'
 >> = {
   hostname: 'mediation.tydom.com',
   userAgent: USER_AGENT,
   keepAlive: true,
   closeOnExit: true,
   requestTimeout: 5 * 1000,
-  reconnectInterval: 10 * 1000,
   keepAliveInterval: 15 * 1000,
   followUpDebounce: 400
 };
@@ -58,14 +49,16 @@ type ResponseHandler = {resolve: (value?: any) => void; reject: (reason?: any) =
 export default class TydomClient extends EventEmitter {
   private config: Required<TydomClientOptions>;
   private socket?: WebSocket;
-  private lastUniqueId: number;
+  private client: Client;
+  private lastUniqueId: number = 0;
+  private attemptCount: number = 0;
   private pool: Map<string, ResponseHandler> = new Map();
   private keepAliveInterval?: NodeJS.Timeout;
   private reconnectInterval?: NodeJS.Timeout;
   constructor(options: TydomClientOptions) {
     super();
     this.config = {...defaultOptions, ...options};
-    this.lastUniqueId = 0;
+    this.client = setupGotClient(this.config);
   }
   private uniqueId() {
     let nextUniqueId = Date.now();
@@ -76,26 +69,15 @@ export default class TydomClient extends EventEmitter {
     return `${nextUniqueId}`;
   }
   public async connect(): Promise<WebSocket> {
-    const {
-      username,
-      password,
-      hostname,
-      userAgent,
-      keepAlive,
-      closeOnExit,
-      reconnectInterval,
-      keepAliveInterval
-    } = this.config;
+    const {username, password, hostname, userAgent, keepAlive, closeOnExit, keepAliveInterval} = this.config;
     const isRemote = hostname === 'mediation.tydom.com';
-    const uri = `/mediation/client?mac=${username}&appli=1`;
-    const headers = {'User-Agent': userAgent};
-    const {realm, nonce, qop} = await getTydomDigestAccessAuthenticationFields({username, hostname, headers});
+    const {uri, realm, nonce, qop} = await this.client.login();
     const {header: authHeader} = await computeDigestAccessAuthenticationHeader(
-      {uri, username, password},
-      {realm, nonce, qop}
+      {username, password},
+      {uri, realm, nonce, qop}
     );
     const websocketOptions: WebSocket.ClientOptions = {
-      headers: {...headers, Authorization: authHeader}
+      headers: {'User-Agent': userAgent, Authorization: authHeader}
     };
     return new Promise((resolve, reject) => {
       debug(`Attempting to open new socket for hostname=${chalkString(hostname)}`);
@@ -113,7 +95,7 @@ export default class TydomClient extends EventEmitter {
             clearInterval(this.keepAliveInterval);
           }
           const actualKeepAliveInterval = Math.max(1000, keepAliveInterval);
-          debug(`Configuring keep-alive interval of ${chalkNumber(actualKeepAliveInterval / 1000)}s`);
+          debug(`Configuring keep-alive interval of ~${chalkNumber(Math.round(actualKeepAliveInterval / 1000))}s`);
           this.keepAliveInterval = setInterval(() => {
             this.get('/ping');
           }, actualKeepAliveInterval);
@@ -180,18 +162,20 @@ export default class TydomClient extends EventEmitter {
           debug(`Removing existing reconnect interval`);
           clearInterval(this.reconnectInterval);
         }
-        if (!this.isExiting && reconnectInterval > 0) {
+        if (!this.isExiting) {
           setTimeout(() => {
-            const actualReconnectInterval = Math.max(1000, reconnectInterval);
-            debug(`Configuring reconnect interval of ${chalkNumber(actualReconnectInterval / 1000)}s`);
+            const actualReconnectInterval = Math.max(1000, calculateDelay({attemptCount: this.attemptCount}));
+            dir({attemptCount: this.attemptCount});
+            debug(`Configuring socket reconnection interval of ${chalkNumber(actualReconnectInterval / 1000)}s`);
             this.reconnectInterval = setInterval(() => {
-              debug(`About to attempt reconnect for hostname=${chalkString(hostname)}`);
+              debug(`About to attempt to reconnect to hostname=${chalkString(hostname)}`);
               this.connect();
             }, actualReconnectInterval);
           });
         }
       });
       socket.on('error', (err) => {
+        this.attemptCount += 1;
         debug(`Tydom socket error for hostname=${chalkString(hostname)}`);
         reject(err);
       });

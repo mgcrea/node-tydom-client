@@ -1,5 +1,8 @@
-import assert from 'assert';
-import fetch from 'node-fetch';
+import got, {Got, RetryObject} from 'got';
+import {TydomClientOptions} from 'src/client';
+import {assert} from 'src/utils/assert';
+import {chalkKeyword, chalkString} from './chalk';
+import debug from './debug';
 import {DigestAccessAuthenticationFields, MessageType} from './http';
 
 export type TydomResponse = Record<string, unknown> | Array<Record<string, unknown>>;
@@ -48,30 +51,61 @@ export const castTydomMessage = async ({
   return {type, uri, method, status: actualStatus, body: await json(), headers};
 };
 
-type GetTydomDigestAccessAuthenticationOptions = {
-  username: string;
-  hostname: string;
-  headers?: {[s: string]: string};
+export type Client = Got & {
+  login: () => Promise<DigestAccessAuthenticationFields>;
 };
 
-export const getTydomDigestAccessAuthenticationFields = async ({
-  username,
-  hostname,
-  headers
-}: GetTydomDigestAccessAuthenticationOptions) => {
-  const query = `mac=${username}&appli=1`;
-  const path = `/mediation/client?${query}`;
-  const method = 'GET';
-  console.log(`Connecting to url="${`https://${hostname}${path}`}"`);
-  const {status, headers: responseHeaders} = await fetch(`https://${hostname}${path}`, {method, headers});
-  assert(status === 401, `Unexpected status=${status}`);
-  const authHeader = responseHeaders.get('www-authenticate');
-  assert(authHeader, 'Missing required "www-authenticate" header');
-  const authFieldsSplit = (authHeader as string).replace(/^Digest\s+/, '').split(',');
-  const authFields = authFieldsSplit.reduce((soFar: {[s: string]: string}, field: string) => {
-    const [key, value] = field.split('="');
-    soFar[key.trim()] = value.slice(0, -1);
-    return soFar;
-  }, {});
-  return authFields as DigestAccessAuthenticationFields;
+export const setupGotClient = (config: Required<TydomClientOptions>): Client => {
+  const {hostname, username, userAgent} = config;
+  const client = got.extend({
+    prefixUrl: `https://${hostname}`,
+    headers: {
+      'User-Agent': userAgent
+    },
+    retry: {
+      limit: Infinity
+    },
+    hooks: {
+      beforeRequest: [
+        (options) => {
+          const {method, url} = options;
+          debug(`About to ${chalkKeyword(method)} request with url=${chalkString(url)}`);
+        }
+      ],
+      beforeRetry: [
+        (options, _error, _retryCount) => {
+          const {method, url} = options;
+          debug(`About to retry ${chalkKeyword(method)} request with url=${chalkString(url)}`);
+        }
+      ]
+    },
+    responseType: 'json',
+    throwHttpErrors: false
+  });
+
+  const login = async (): Promise<DigestAccessAuthenticationFields> => {
+    const searchParams = new URLSearchParams({mac: username, appli: '1'}).toString();
+    const uri = 'mediation/client';
+    const {statusCode, headers} = await client.get<string>(uri, {
+      searchParams
+    });
+    assert(statusCode === 401, `Unexpected statusCode=${statusCode}`);
+    const authHeader = headers['www-authenticate'];
+    assert(authHeader, 'Missing required "www-authenticate" header');
+    const authFieldsSplit = (authHeader as string).replace(/^Digest\s+/, '').split(',');
+    const authFields = authFieldsSplit.reduce(
+      (soFar: Partial<DigestAccessAuthenticationFields>, field: string) => {
+        const [key, value] = field.split('="');
+        soFar[key.trim() as keyof DigestAccessAuthenticationFields] = value.slice(0, -1);
+        return soFar;
+      },
+      {uri: `/${uri}?${searchParams}`}
+    ) as DigestAccessAuthenticationFields;
+    return authFields;
+  };
+
+  return Object.assign(client, {login});
 };
+
+export const calculateDelay = ({attemptCount}: Pick<RetryObject, 'attemptCount'>) =>
+  1000 * Math.pow(2, Math.max(0, attemptCount - 1)) + Math.random() * 100;
