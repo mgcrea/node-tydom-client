@@ -11,6 +11,7 @@ Array [
   "pool",
   "keepAliveInterval",
   "reconnectInterval",
+  "isExiting",
 ]
 `;
 
@@ -24,6 +25,7 @@ Array [
     "followUpDebounce": 400,
     "hostname": "mediation.tydom.com",
     "keepAlive": true,
+    "keepAliveInterval": 15000,
     "password": "MyPassw0rd!",
     "reconnectInterval": 10000,
     "requestTimeout": 5000,
@@ -35,5 +37,6 @@ Array [
   Map {},
   undefined,
   undefined,
+  false,
 ]
 `;
