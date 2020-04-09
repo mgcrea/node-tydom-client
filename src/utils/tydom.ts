@@ -109,3 +109,8 @@ export const setupGotClient = (config: Required<TydomClientOptions>): Client => 
 
 export const calculateDelay = ({attemptCount}: Pick<RetryObject, 'attemptCount'>) =>
   1000 * Math.pow(2, Math.max(0, attemptCount - 1)) + Math.random() * 100;
+
+export const asyncWait = (ms: number) =>
+  new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });

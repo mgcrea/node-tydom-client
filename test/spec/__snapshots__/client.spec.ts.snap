@@ -13,6 +13,7 @@ Array [
   "pool",
   "keepAliveInterval",
   "reconnectInterval",
+  "retrySuccessTimeout",
   "isExiting",
 ]
 `;
@@ -27,7 +28,7 @@ Array [
     "followUpDebounce": 400,
     "hostname": "mediation.tydom.com",
     "keepAlive": true,
-    "keepAliveInterval": 15000,
+    "keepAliveInterval": 30000,
     "password": "MyPassw0rd!",
     "requestTimeout": 5000,
     "userAgent": "Tydom/255 CFNetwork/1125.2 Darwin/19.4.0",
@@ -38,6 +39,7 @@ Array [
   0,
   0,
   Map {},
+  undefined,
   undefined,
   undefined,
   false,

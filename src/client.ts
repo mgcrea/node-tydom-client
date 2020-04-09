@@ -38,7 +38,7 @@ export const defaultOptions: Required<Pick<
   keepAlive: true,
   closeOnExit: true,
   requestTimeout: 5 * 1000,
-  keepAliveInterval: 15 * 1000,
+  keepAliveInterval: 30 * 1000,
   followUpDebounce: 400
 };
 
@@ -55,6 +55,7 @@ export default class TydomClient extends EventEmitter {
   private pool: Map<string, ResponseHandler> = new Map();
   private keepAliveInterval?: NodeJS.Timeout;
   private reconnectInterval?: NodeJS.Timeout;
+  private retrySuccessTimeout?: NodeJS.Timeout;
   constructor(options: TydomClientOptions) {
     super();
     this.config = {...defaultOptions, ...options};
@@ -157,6 +158,10 @@ export default class TydomClient extends EventEmitter {
       socket.on('close', () => {
         debug(`Tydom socket closed for hostname=${chalkString(hostname)}`);
         this.emit('disconnect');
+        // Clear any pending successTimeout
+        if (this.retrySuccessTimeout) {
+          clearTimeout(this.retrySuccessTimeout);
+        }
         // Reconnect
         if (this.reconnectInterval) {
           debug(`Removing existing reconnect interval`);
@@ -169,7 +174,12 @@ export default class TydomClient extends EventEmitter {
             debug(`Configuring socket reconnection interval of ${chalkNumber(actualReconnectInterval / 1000)}s`);
             this.reconnectInterval = setInterval(() => {
               debug(`About to attempt to reconnect to hostname=${chalkString(hostname)}`);
+              this.attemptCount += 1;
               this.connect();
+              // Consider attempt successful after a 60s+ stable connection
+              this.retrySuccessTimeout = setTimeout(() => {
+                this.attemptCount -= 1;
+              }, 60 * 1000);
             }, actualReconnectInterval);
           });
         }
