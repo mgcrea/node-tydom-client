@@ -173,7 +173,11 @@ export default class TydomClient extends EventEmitter {
             dir({attemptCount: this.attemptCount});
             debug(`Configuring socket reconnection interval of ${chalkNumber(actualReconnectInterval / 1000)}s`);
             this.reconnectInterval = setInterval(() => {
-              debug(`About to attempt to reconnect to hostname=${chalkString(hostname)}`);
+              debug(
+                `About to attempt to reconnect to hostname=${chalkString(hostname)} for the ${chalkNumber(
+                  this.attemptCount
+                )}th time`
+              );
               this.attemptCount += 1;
               this.connect();
               // Consider attempt successful after a 60s+ stable connection
