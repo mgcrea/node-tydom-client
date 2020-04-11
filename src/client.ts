@@ -54,7 +54,7 @@ export default class TydomClient extends EventEmitter {
   private attemptCount: number = 0;
   private pool: Map<string, ResponseHandler> = new Map();
   private keepAliveInterval?: NodeJS.Timeout;
-  private reconnectInterval?: NodeJS.Timeout;
+  private reconnectTimeout?: NodeJS.Timeout;
   private retrySuccessTimeout?: NodeJS.Timeout;
   constructor(options: TydomClientOptions) {
     super();
@@ -72,11 +72,13 @@ export default class TydomClient extends EventEmitter {
   public async connect(): Promise<WebSocket> {
     const {username, password, hostname, userAgent, keepAlive, closeOnExit, keepAliveInterval} = this.config;
     const isRemote = hostname === 'mediation.tydom.com';
+    // Http Login
     const {uri, realm, nonce, qop} = await this.client.login();
     const {header: authHeader} = await computeDigestAccessAuthenticationHeader(
       {username, password},
       {uri, realm, nonce, qop}
     );
+    // WebSocket
     const websocketOptions: WebSocket.ClientOptions = {
       headers: {'User-Agent': userAgent, Authorization: authHeader}
     };
@@ -86,10 +88,6 @@ export default class TydomClient extends EventEmitter {
       socket.on('open', () => {
         debug(`Tydom socket opened for hostname=${chalkString(hostname)}`);
         this.socket = socket;
-        if (this.reconnectInterval) {
-          clearInterval(this.reconnectInterval);
-          delete this.reconnectInterval;
-        }
         if (keepAlive) {
           if (this.keepAliveInterval) {
             debug(`Removing existing keep-alive interval`);
@@ -163,28 +161,29 @@ export default class TydomClient extends EventEmitter {
           clearTimeout(this.retrySuccessTimeout);
         }
         // Reconnect
-        if (this.reconnectInterval) {
-          debug(`Removing existing reconnect interval`);
-          clearInterval(this.reconnectInterval);
+        if (this.reconnectTimeout) {
+          debug(`Removing existing reconnect timeout`);
+          clearTimeout(this.reconnectTimeout);
         }
         if (!this.isExiting) {
           setTimeout(() => {
-            const actualReconnectInterval = Math.max(1000, calculateDelay({attemptCount: this.attemptCount}));
-            dir({attemptCount: this.attemptCount});
-            debug(`Configuring socket reconnection interval of ${chalkNumber(actualReconnectInterval / 1000)}s`);
-            this.reconnectInterval = setInterval(() => {
+            this.attemptCount += 1;
+            const actualReconnectTimeout = Math.max(1000, calculateDelay({attemptCount: this.attemptCount}));
+            debug(
+              `Configuring socket reconnection timeout of ~${chalkNumber(Math.round(actualReconnectTimeout / 1000))}s`
+            );
+            this.reconnectTimeout = setTimeout(() => {
               debug(
                 `About to attempt to reconnect to hostname=${chalkString(hostname)} for the ${chalkNumber(
                   this.attemptCount
                 )}th time`
               );
-              this.attemptCount += 1;
               this.connect();
               // Consider attempt successful after a 60s+ stable connection
               this.retrySuccessTimeout = setTimeout(() => {
-                this.attemptCount -= 1;
+                this.attemptCount = 0;
               }, 60 * 1000);
-            }, actualReconnectInterval);
+            }, actualReconnectTimeout);
           });
         }
       });
@@ -294,8 +293,8 @@ export default class TydomClient extends EventEmitter {
       this.isExiting = true;
       debug('Attempting to gracefully close socket ...');
       // Properly clear any running setInterval
-      if (this.reconnectInterval) {
-        clearInterval(this.reconnectInterval);
+      if (this.reconnectTimeout) {
+        clearTimeout(this.reconnectTimeout);
       }
       if (this.keepAliveInterval) {
         clearInterval(this.keepAliveInterval);
