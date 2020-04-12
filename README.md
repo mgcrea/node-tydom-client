@@ -33,7 +33,21 @@ This library uses [debug](https://www.npmjs.com/package/debug) to provide high v
 DEBUG=tydom-client
 ```
 
-### Examples
+### Command-line Usage
+
+#### Request
+
+```bash
+npx tydom request /configs/file /devices/data /devices/meta /devices/cmeta --file tydom_output.json --username 001A25XXXXXX --password XXXXXX
+```
+
+#### Listen
+
+```bash
+npx tydom-client listen --username 001A25XXXXXX --password XXXXXX
+```
+
+### Library Usage
 
 #### Simple example
 

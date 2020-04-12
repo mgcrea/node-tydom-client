@@ -49,7 +49,7 @@ Object {
     "updateAvailable": false,
     "urlMediation": "mediation.tydom.com",
   },
-  "date": 2020-04-12T14:18:09.241Z,
+  "date": 2020-04-12T14:36:45.891Z,
   "headers": Map {
     "server" => "Tydom-001A2502951F",
     "uri-origin" => "/info",
@@ -89,7 +89,7 @@ Object {
       "id": 1531745761,
     },
   ],
-  "date": 2020-04-12T14:18:09.246Z,
+  "date": 2020-04-12T14:36:45.894Z,
   "headers": Map {
     "server" => "Tydom-001A2502951F",
     "content-type" => "application/json",
