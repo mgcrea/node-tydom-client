@@ -11,7 +11,7 @@ Easily manage [Tydom hardware](https://www.deltadore.fr/domotique/pilotage-maiso
 
 Originally built to enable bridging accessories to [Apple HomeKit](https://www.apple.com/ios/home/) via the related [homebridge-tydom](https://github.com/mgcrea/homebridge-tydom) plugin.
 
-- Rely on [got](https://github.com/sindresorhus/got) for the initial HTTP handshake, [ws](https://github.com/websockets/ws) for the websocket connection and [http-parser-js](https://github.com/creationix/http-parser-js) to parse incoming messages.
+- Relies on [got](https://github.com/sindresorhus/got) for the initial HTTP handshake, [ws](https://github.com/websockets/ws) for the websocket connection and [http-parser-js](https://github.com/creationix/http-parser-js) to parse incoming messages.
 
 - Built with [TypeScript](https://www.typescriptlang.org/) for static type checking with exported types along the library.
 

@@ -1,6 +1,18 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`parseIncomingMessage should properly parse a getInfoResponse response 1`] = `
+Array [
+  "type",
+  "uri",
+  "method",
+  "status",
+  "body",
+  "headers",
+  "date",
+]
+`;
+
+exports[`parseIncomingMessage should properly parse a getInfoResponse response 2`] = `
 Object {
   "body": Object {
     "TYDOM.dat": 1,
@@ -49,7 +61,6 @@ Object {
     "updateAvailable": false,
     "urlMediation": "mediation.tydom.com",
   },
-  "date": 2020-04-12T14:36:45.891Z,
   "headers": Map {
     "server" => "Tydom-001A2502951F",
     "uri-origin" => "/info",
@@ -65,6 +76,18 @@ Object {
 `;
 
 exports[`parseIncomingMessage should properly parse a updatedDevicesData response 1`] = `
+Array [
+  "type",
+  "uri",
+  "method",
+  "status",
+  "body",
+  "headers",
+  "date",
+]
+`;
+
+exports[`parseIncomingMessage should properly parse a updatedDevicesData response 2`] = `
 Object {
   "body": Array [
     Object {
@@ -89,7 +112,6 @@ Object {
       "id": 1531745761,
     },
   ],
-  "date": 2020-04-12T14:36:45.894Z,
   "headers": Map {
     "server" => "Tydom-001A2502951F",
     "content-type" => "application/json",
