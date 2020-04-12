@@ -37,11 +37,15 @@ DEBUG=tydom-client
 
 #### Request
 
+Request (GET) a few known tydom endpoints and store the combined result into a JSON file
+
 ```bash
 npx tydom request /configs/file /devices/data /devices/meta /devices/cmeta --file tydom_output.json --username 001A25XXXXXX --password XXXXXX
 ```
 
 #### Listen
+
+Connect to the Tydom socket and listen for external events
 
 ```bash
 npx tydom-client listen --username 001A25XXXXXX --password XXXXXX
