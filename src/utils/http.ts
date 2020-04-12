@@ -46,20 +46,21 @@ export const parseIncomingMessage = async (data: Buffer): Promise<TydomBinaryMes
         bodyParts.push(chunk.slice(offset, offset + length));
       };
       parser.onMessageComplete = () => {
+        const date = new Date();
         const body = Buffer.concat(bodyParts).toString('utf8');
         switch (messageType) {
           case 'response': {
             const method = null;
             const uri = headers.get('uri-origin') || '/';
             const status = parseInt(messageMatches[3], 10);
-            resolve(castTydomMessage({type: messageType, method, uri, status, body, headers}));
+            resolve(castTydomMessage({type: messageType, method, uri, status, body, headers, date}));
             return;
           }
           case 'request': {
             const method = messageMatches[1];
             const uri = messageMatches[2];
             const status = null;
-            resolve(castTydomMessage({type: messageType, method, uri, status, body, headers}));
+            resolve(castTydomMessage({type: messageType, method, uri, status, body, headers, date}));
             return;
           }
           default: {

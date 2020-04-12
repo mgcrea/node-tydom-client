@@ -12,7 +12,7 @@ Array [
   "attemptCount",
   "pool",
   "keepAliveInterval",
-  "reconnectInterval",
+  "reconnectTimeout",
   "retrySuccessTimeout",
   "isExiting",
 ]

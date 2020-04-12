@@ -14,6 +14,7 @@ export type CastTydomMessageProps = {
   status: number | null;
   type: MessageType;
   uri: string;
+  date: Date;
 };
 
 export type TydomHttpMessage = CastTydomMessageProps & {
@@ -31,7 +32,8 @@ export const castTydomMessage = async ({
   method,
   status,
   type,
-  uri
+  uri,
+  date
 }: CastTydomMessageProps): Promise<TydomHttpMessage> => {
   const hasBody = body.length > 0;
   const shouldBeJson =
@@ -48,7 +50,7 @@ export const castTydomMessage = async ({
     }
     return JSON.parse(body);
   };
-  return {type, uri, method, status: actualStatus, body: await json(), headers};
+  return {type, uri, method, status: actualStatus, body: await json(), headers, date};
 };
 
 export type Client = Got & {
