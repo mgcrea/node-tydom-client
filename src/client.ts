@@ -176,11 +176,16 @@ export default class TydomClient extends EventEmitter {
               debug(
                 `About to attempt to reconnect to hostname=${chalkString(hostname)} for the ${chalkNumber(
                   this.attemptCount
-                )}th time`
+                )}-th time ...`
               );
               this.connect();
               // Consider attempt successful after a 60s+ stable connection
               this.retrySuccessTimeout = setTimeout(() => {
+                debug(
+                  `Reconnection to hostname=${chalkString(hostname)} for the ${chalkNumber(
+                    this.attemptCount
+                  )}-th time was successful (> 60s), will reset \`attemptCount\``
+                );
                 this.attemptCount = 0;
               }, 60 * 1000);
             }, actualReconnectTimeout);
