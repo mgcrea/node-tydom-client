@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Delta Dore home automation devices rely on a proprietary radio protocol called X3D, that is operating on the 868MHz band.
+Delta Dore home automation devices rely on a proprietary radio protocol called X3D, that is operating on the 868.350MHz band.
 
 The mobile application API uses a WebSocket communication to interact with the Tydom gateway.
 
@@ -38,7 +38,7 @@ Possible that the proper framing is at the bit-level but does not look like it (
 | 5         | `0x01`                     | Device "rang" (radio-related property)                   |
 | 6-8       | `0x0a 0x02 0x00`           | ? - Same accross all messages (or gateway/user related)  |
 | 9         | `0x0d`                     | ? - Same accross all same-sized messages (message type?) |
-| 10-12     | `0x91 0x39 0x68`           | Device identifier                                        |
+| 10-12     | `0x91 0x39 0x68`           | Device identifier `${LSB} ${ISB} ${MSB}`                 |
 | 13-14     | `0x00 0x41`                | ? - Property value being updated                         |
 | 15-18     | `0x82 0x01 0x00 0x00 0x00` | ? - Property name being updated                          |
 | 19-23     | `0xfd, 0x52, 0xfb, 0xd0`   | ? - Maybe some checksum (last four bytes)                |
@@ -95,3 +95,55 @@ Which in that case gives us:
 - last four digits, `0781` is the proper device identifier
 
 For now I haven't found a way to decode from the numeric device id to the hex bytes of the binary frame.
+
+Querying the API `/devices/access` access you can find some RF-relevant, for the device `1586250781`:
+
+```json
+{
+  "id": 1586250781,
+  "endpoints": [
+    {
+      "id": 1586250781,
+      "error": 0,
+      "access": {
+        "protocol": "X3D",
+        "profile": "detector",
+        "type": "direct",
+        "addr": {
+          "rang": 1,
+          "MSB": "0x68",
+          "ISB": "0x39",
+          "LSB": "0x91",
+          "code": "0x08",
+          "msg": "0x01",
+          "var": "0x00",
+          "index": "0x00",
+          "canal": "0x00",
+          "uFM": "0x20",
+          "CS": "0x95"
+        },
+        "subAddr": 0
+      }
+    }
+  ]
+}
+```
+
+You can conclude that the deviceId is `${LSB} ${ISB} ${MSB}`
+
+## Related
+
+- [X2D decoding](https://github.com/sasu-drooz/Domoticz-Rfplayer/blob/master/plugin.py#L1473)
+
+```python
+id=1586250781
+idb= bin(int(id))[2:]
+print("id binary : " + str(idb))
+Unit=idb[-6:]
+idd=idb[:-6]
+print("area b: " + str(Unit))
+print("id decode b: " + str(idd))
+print("area i: " + str(int(Unit,2)+1))
+print("id decode i: " + str(int(idd,2)))
+print("id decode h: " + str(hex(int(idd,2)))[2:])
+```
