@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.11.7](https://github.com/mgcrea/node-tydom-client/compare/v0.11.6...v0.11.7) (2020-05-19)
+
+
+### Bug Fixes
+
+* **timeout:** properly close socket on timeout ([e6d71e8](https://github.com/mgcrea/node-tydom-client/commit/e6d71e888e7d648b27e6af5daebf0f277139bfc5))
+
 ### [0.11.6](https://github.com/mgcrea/node-tydom-client/compare/v0.11.5...v0.11.6) (2020-05-19)
 
 
