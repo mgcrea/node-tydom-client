@@ -203,9 +203,11 @@ export default class TydomClient extends EventEmitter {
     if (this.keepAliveInterval) {
       clearInterval(this.keepAliveInterval);
     }
-    if (this.socket instanceof WebSocket) {
-      this.socket.close();
+    if (!(this.socket instanceof WebSocket)) {
+      debug(`Socket instance is missing while performing close()`);
+      return;
     }
+    this.socket.close();
   }
   send(rawHttpRequest: string) {
     assert(this.socket instanceof WebSocket, 'Required socket instance, please use connect() first');
@@ -240,7 +242,10 @@ export default class TydomClient extends EventEmitter {
           requestTimeout > 0
             ? setTimeout(() => {
                 debug(`Timeout for request "${rawHttpRequest.replace(/\r\n/g, '\\r\\n')}"`);
-                this.close();
+                if (this.socket instanceof WebSocket) {
+                  debug(`Closing the socket following request timeout to trigger keepAlive`);
+                  this.socket.close();
+                }
               }, requestTimeout)
             : null;
         this.pool.set(requestId, {resolve: resolveBody, reject, timeout});
