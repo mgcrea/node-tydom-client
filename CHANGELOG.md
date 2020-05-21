@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.11.8](https://github.com/mgcrea/node-tydom-client/compare/v0.11.7...v0.11.8) (2020-05-21)
+
+
+### Bug Fixes
+
+* **got:** add rejectUnauthorized config ([85f2b0b](https://github.com/mgcrea/node-tydom-client/commit/85f2b0b5274bacb4d6c804330c678fef9fd1bc6d))
+
 ### [0.11.7](https://github.com/mgcrea/node-tydom-client/compare/v0.11.6...v0.11.7) (2020-05-19)
 
 
