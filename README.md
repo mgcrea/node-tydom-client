@@ -40,7 +40,7 @@ DEBUG=tydom-client
 Request (GET) a few known tydom endpoints and store the combined result into a JSON file
 
 ```bash
-npx tydom request /configs/file /devices/data /devices/meta /devices/cmeta --file tydom_output.json --username 001A25XXXXXX --password XXXXXX
+npx tydom-client request /configs/file /devices/data /devices/meta /devices/cmeta --file tydom_output.json --username 001A25XXXXXX --password XXXXXX
 ```
 
 #### Listen
