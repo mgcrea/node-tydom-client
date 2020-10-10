@@ -82,7 +82,7 @@ export type BuildRawHttpRequestOptions = {
   body?: string;
 };
 
-export const buildRawHttpRequest = ({url, method, headers = {}, body}: BuildRawHttpRequestOptions) => {
+export const buildRawHttpRequest = ({url, method, headers = {}, body}: BuildRawHttpRequestOptions): string => {
   const rawRequest = `${method} ${url} HTTP/1.1`;
   const rawHeaders = Object.keys(headers).reduce((soFar, key) => {
     return `${soFar}${key}: ${headers[key]}\r\n`;

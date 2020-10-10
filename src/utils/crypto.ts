@@ -28,7 +28,7 @@ export const getRandomBytes = async (size = 256): Promise<Buffer> => {
 };
 
 let requestCounterValue = 0;
-export const getRequestCounter = () => {
+export const getRequestCounter = (): string => {
   requestCounterValue += 1;
   const nc = requestCounterValue + '';
   return ('00000000' + nc).substr(nc.length);

@@ -1,18 +1,18 @@
 import chalk from 'chalk';
 import {EventEmitter} from 'events';
 import {debounce, get} from 'lodash';
-import {USER_AGENT} from 'src/config/env';
-import {assert} from 'src/utils/assert';
-import {chalkJson, chalkNumber, chalkString} from 'src/utils/chalk';
-import debug, {dir, toHexString} from 'src/utils/debug';
+import WebSocket from 'ws';
+import {USER_AGENT} from './config/env';
+import {assert} from './utils/assert';
+import {chalkJson, chalkNumber, chalkString} from './utils/chalk';
+import debug, {dir, toHexString} from './utils/debug';
 import {
   buildRawHttpRequest,
   BuildRawHttpRequestOptions,
   computeDigestAccessAuthenticationHeader,
   parseIncomingMessage
-} from 'src/utils/http';
-import {Client, setupGotClient, TydomHttpMessage, TydomResponse, calculateDelay} from 'src/utils/tydom';
-import WebSocket from 'ws';
+} from './utils/http';
+import {calculateDelay, Client, setupGotClient, TydomHttpMessage, TydomResponse} from './utils/tydom';
 
 export interface TydomClientConnectOptions {
   keepAlive?: boolean;
@@ -42,7 +42,7 @@ export const defaultOptions: Required<Pick<
   followUpDebounce: 400
 };
 
-export const createClient = (options: TydomClientOptions) => new TydomClient(options);
+export const createClient = (options: TydomClientOptions): TydomClient => new TydomClient(options);
 
 type ResponseHandler = {resolve: (value?: any) => void; reject: (reason?: any) => void; timeout: NodeJS.Timeout | null};
 
@@ -166,7 +166,7 @@ export default class TydomClient extends EventEmitter {
           clearTimeout(this.reconnectTimeout);
         }
         if (!this.isExiting) {
-          setTimeout(() => {
+          setImmediate(() => {
             this.attemptCount += 1;
             const actualReconnectTimeout = Math.max(1000, calculateDelay({attemptCount: this.attemptCount}));
             debug(
@@ -199,7 +199,7 @@ export default class TydomClient extends EventEmitter {
       });
     });
   }
-  public async close() {
+  public close(): void {
     if (this.keepAliveInterval) {
       clearInterval(this.keepAliveInterval);
     }
@@ -209,7 +209,7 @@ export default class TydomClient extends EventEmitter {
     }
     this.socket.close();
   }
-  send(rawHttpRequest: string) {
+  send(rawHttpRequest: string): void {
     assert(this.socket instanceof WebSocket, 'Required socket instance, please use connect() first');
     if ([WebSocket.CLOSING, WebSocket.CLOSED].includes(this.socket.readyState)) {
       throw new Error('Socket instance is closing/closed, please reconnect with connect() first');
@@ -255,16 +255,16 @@ export default class TydomClient extends EventEmitter {
       }
     });
   }
-  public async get<T extends TydomResponse = TydomResponse>(url: string) {
+  public async get<T extends TydomResponse = TydomResponse>(url: string): Promise<T> {
     return await this.request<T>({url, method: 'GET'});
   }
-  public async delete<T extends TydomResponse = TydomResponse>(url: string) {
+  public async delete<T extends TydomResponse = TydomResponse>(url: string): Promise<T> {
     return await this.request<T>({url, method: 'DELETE'});
   }
-  public async put<T extends TydomResponse = TydomResponse>(url: string, body: {[s: string]: any} = {}) {
+  public async put<T extends TydomResponse = TydomResponse>(url: string, body: {[s: string]: any} = {}): Promise<T> {
     return await this.request<T>({url, method: 'PUT', body: JSON.stringify(body)});
   }
-  public async post<T extends TydomResponse = TydomResponse>(url: string, body: {[s: string]: any} = {}) {
+  public async post<T extends TydomResponse = TydomResponse>(url: string, body: {[s: string]: any} = {}): Promise<T> {
     return await this.request<T>({url, method: 'POST', body: JSON.stringify(body)});
   }
   public async command<T extends TydomResponse = TydomResponse>(url: string): Promise<T[]> {
@@ -311,12 +311,12 @@ export default class TydomClient extends EventEmitter {
       }
       if (!socket) {
         debug('Socket instance not found, exiting!');
-        setTimeout(() => process.exit(0));
+        setImmediate(() => process.exit(0));
         return;
       }
       socket.once('close', () => {
         debug('Socket instance properly closed, exiting!');
-        setTimeout(() => process.exit(0));
+        setImmediate(() => process.exit(0));
       });
       switch (socket.readyState) {
         case socket.CONNECTING:

@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 process.env.DEBUG = `${process.env.DEBUG} tydom-client`.trim();
 
+import chalk from 'chalk';
 import {promises as fs} from 'fs';
 import {resolve} from 'path';
-import {createClient} from 'src/client';
-import {dir} from 'src/utils/debug';
 import yargs from 'yargs';
-import {asyncWait} from 'src/utils/tydom';
-import {chalkString, chalkKeyword, chalkJson} from 'src/utils/chalk';
-import chalk from 'chalk';
+import {createClient} from '../client';
+import {chalkJson, chalkKeyword, chalkString} from '../utils/chalk';
+import {dir} from '../utils/debug';
+import {asyncWait} from '../utils/tydom';
 
 type TydomResult = Record<string, unknown>;
 
@@ -74,7 +74,7 @@ const requestCommand = async (argv: TydomRequestCommandOptions): Promise<void> =
   }, 100);
 };
 
-type TydomListenCommandOptions = TydomGlobalOptions & {};
+type TydomListenCommandOptions = TydomGlobalOptions;
 
 const listenCommand = async (argv: TydomListenCommandOptions): Promise<void> => {
   const {verbose, username, password, hostname} = argv;

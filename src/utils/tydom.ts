@@ -1,9 +1,10 @@
 import got, {Got, RetryObject} from 'got';
-import {TydomClientOptions} from 'src/client';
-import {assert} from 'src/utils/assert';
+import {TydomClientOptions} from '../client';
+import {assert} from './assert';
 import {chalkKeyword, chalkString} from './chalk';
 import debug from './debug';
 import {DigestAccessAuthenticationFields, MessageType} from './http';
+import {URLSearchParams} from 'url';
 
 export type TydomResponse = Record<string, unknown> | Array<Record<string, unknown>>;
 
@@ -85,7 +86,9 @@ export const setupGotClient = (config: Required<TydomClientOptions>): Client => 
     },
     responseType: 'json',
     throwHttpErrors: false,
-    rejectUnauthorized: isRemote
+    https: {
+      rejectUnauthorized: isRemote
+    }
   });
 
   const login = async (): Promise<DigestAccessAuthenticationFields> => {
@@ -112,10 +115,10 @@ export const setupGotClient = (config: Required<TydomClientOptions>): Client => 
   return Object.assign(client, {login});
 };
 
-export const calculateDelay = ({attemptCount}: Pick<RetryObject, 'attemptCount'>) =>
+export const calculateDelay = ({attemptCount}: Pick<RetryObject, 'attemptCount'>): number =>
   1000 * Math.pow(2, Math.max(0, attemptCount - 1)) + Math.random() * 100;
 
-export const asyncWait = (ms: number) =>
+export const asyncWait = (ms: number): Promise<void> =>
   new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
