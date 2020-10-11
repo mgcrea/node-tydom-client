@@ -1,5 +1,19 @@
-import console from 'console';
+/* eslint-disable @typescript-eslint/no-namespace */
+
+import {warn} from 'console';
 import {inspect} from 'util';
 
-global.d = (...args) => console.dir(args.length > 1 ? args : args[0], {colors: true, depth: 10});
-global.t = Date.now();
+declare global {
+  namespace NodeJS {
+    interface Global {
+      d: Console['warn'];
+      dd: Console['warn'];
+    }
+  }
+}
+
+global.d = (...args: unknown[]) => warn(inspect(args.length > 1 ? args : args[0], {colors: true, depth: 10}));
+global.dd = (...args: unknown[]) => {
+  global.d(...args);
+  expect(1).toEqual(2);
+};

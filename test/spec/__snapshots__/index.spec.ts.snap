@@ -2,7 +2,6 @@
 
 exports[`package should expose a stable interface 1`] = `
 Object {
-  "__esModule": true,
   "createClient": [Function],
   "default": [Function],
 }
