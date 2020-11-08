@@ -17,7 +17,7 @@ describe('client', () => {
     expect(Object.values(client)).toMatchSnapshot();
   });
   it('should properly connect to a remote tydom server', async () => {
-    const client = createClient({username, password});
+    const client = createClient({username, password, retryOnClose: false});
     nock(`https://mediation.tydom.com:443`)
       .get('/mediation/client')
       .query({mac: username, appli: '1'})
@@ -61,7 +61,7 @@ describe('client', () => {
   });
   it('should properly connect to a local tydom server', async () => {
     const hostname = '192.168.1.2';
-    const client = createClient({username, password, hostname});
+    const client = createClient({username, password, hostname, retryOnClose: false});
     nock(`https://${hostname}:443`)
       .get('/mediation/client')
       .query({mac: username, appli: '1'})

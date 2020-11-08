@@ -4,5 +4,8 @@ module.exports = {
   setupFiles: ['<rootDir>/test/setup.ts'],
   // setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
   testEnvironment: 'node',
-  collectCoverageFrom: ['src/**/*.ts']
+  collectCoverageFrom: ['src/**/*.ts'],
+  moduleNameMapper: {
+    '^src/(.*)$': '<rootDir>/src/$1'
+  }
 };

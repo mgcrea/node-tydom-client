@@ -87,7 +87,7 @@ export const setupGotClient = (config: Required<TydomClientOptions>): Client => 
     responseType: 'json',
     throwHttpErrors: false,
     https: {
-      rejectUnauthorized: isRemote
+      rejectUnauthorized: true
     }
   });
 

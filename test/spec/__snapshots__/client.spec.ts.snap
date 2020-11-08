@@ -31,6 +31,7 @@ Array [
     "keepAliveInterval": 30000,
     "password": "MyPassw0rd!",
     "requestTimeout": 5000,
+    "retryOnClose": true,
     "userAgent": "Tydom/255 CFNetwork/1125.2 Darwin/19.4.0",
     "username": "001A25123456",
   },

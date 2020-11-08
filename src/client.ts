@@ -27,11 +27,19 @@ export interface TydomClientOptions extends TydomClientConnectOptions {
   requestTimeout?: number;
   keepAliveInterval?: number;
   followUpDebounce?: number;
+  retryOnClose?: boolean;
 }
 
 export const defaultOptions: Required<Pick<
   TydomClientOptions,
-  'userAgent' | 'hostname' | 'keepAlive' | 'closeOnExit' | 'keepAliveInterval' | 'requestTimeout' | 'followUpDebounce'
+  | 'userAgent'
+  | 'hostname'
+  | 'keepAlive'
+  | 'closeOnExit'
+  | 'keepAliveInterval'
+  | 'requestTimeout'
+  | 'followUpDebounce'
+  | 'retryOnClose'
 >> = {
   hostname: 'mediation.tydom.com',
   userAgent: USER_AGENT,
@@ -39,7 +47,8 @@ export const defaultOptions: Required<Pick<
   closeOnExit: true,
   requestTimeout: 5 * 1000,
   keepAliveInterval: 30 * 1000,
-  followUpDebounce: 400
+  followUpDebounce: 400,
+  retryOnClose: true
 };
 
 export const createClient = (options: TydomClientOptions): TydomClient => new TydomClient(options);
@@ -70,7 +79,16 @@ export default class TydomClient extends EventEmitter {
     return `${nextUniqueId}`;
   }
   public async connect(): Promise<WebSocket> {
-    const {username, password, hostname, userAgent, keepAlive, closeOnExit, keepAliveInterval} = this.config;
+    const {
+      username,
+      password,
+      hostname,
+      userAgent,
+      keepAlive,
+      closeOnExit,
+      keepAliveInterval,
+      retryOnClose
+    } = this.config;
     const isRemote = hostname === 'mediation.tydom.com';
     // Http Login
     const {uri, realm, nonce, qop} = await this.client.login();
@@ -165,7 +183,7 @@ export default class TydomClient extends EventEmitter {
           debug(`Removing existing reconnect timeout`);
           clearTimeout(this.reconnectTimeout);
         }
-        if (!this.isExiting) {
+        if (retryOnClose && !this.isExiting) {
           setImmediate(() => {
             this.attemptCount += 1;
             const actualReconnectTimeout = Math.max(1000, calculateDelay({attemptCount: this.attemptCount}));
@@ -178,7 +196,15 @@ export default class TydomClient extends EventEmitter {
                   this.attemptCount
                 )}-th time ...`
               );
-              this.connect();
+              try {
+                this.connect();
+              } catch (err) {
+                debug(
+                  `Failed attempt to reconnect to hostname=${chalkString(hostname)} for the ${chalkNumber(
+                    this.attemptCount
+                  )}-th time!`
+                );
+              }
               // Consider attempt successful after a 60s+ stable connection
               this.retrySuccessTimeout = setTimeout(() => {
                 debug(
