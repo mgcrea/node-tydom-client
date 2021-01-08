@@ -4,6 +4,7 @@ import {debounce, get} from 'lodash';
 import WebSocket from 'ws';
 import {USER_AGENT} from './config/env';
 import {assert} from './utils/assert';
+import {calculateDelay} from './utils/async';
 import {chalkJson, chalkNumber, chalkString} from './utils/chalk';
 import debug, {dir, toHexString} from './utils/debug';
 import {
@@ -12,7 +13,7 @@ import {
   computeDigestAccessAuthenticationHeader,
   parseIncomingMessage
 } from './utils/http';
-import {calculateDelay, Client, setupGotClient, TydomHttpMessage, TydomResponse} from './utils/tydom';
+import {Client, setupGotClient, TydomHttpMessage, TydomResponse} from './utils/tydom';
 
 export interface TydomClientConnectOptions {
   keepAlive?: boolean;

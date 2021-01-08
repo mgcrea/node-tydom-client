@@ -8,7 +8,7 @@ import yargs from 'yargs';
 import {createClient} from '../client';
 import {chalkJson, chalkKeyword, chalkString} from '../utils/chalk';
 import {dir} from '../utils/debug';
-import {asyncWait} from '../utils/tydom';
+import {asyncWait} from '../utils/async';
 
 type TydomResult = Record<string, unknown>;
 

@@ -1,10 +1,10 @@
-import got, {Got, RetryObject} from 'got';
+import got, {Got} from 'got';
+import {URLSearchParams} from 'url';
 import {TydomClientOptions} from '../client';
 import {assert} from './assert';
 import {chalkKeyword, chalkString} from './chalk';
 import debug from './debug';
 import {DigestAccessAuthenticationFields, MessageType} from './http';
-import {URLSearchParams} from 'url';
 
 export type TydomResponse = Record<string, unknown> | Array<Record<string, unknown>>;
 
@@ -114,11 +114,3 @@ export const setupGotClient = (config: Required<TydomClientOptions>): Client => 
 
   return Object.assign(client, {login});
 };
-
-export const calculateDelay = ({attemptCount}: Pick<RetryObject, 'attemptCount'>): number =>
-  1000 * Math.pow(2, Math.max(0, attemptCount - 1)) + Math.random() * 100;
-
-export const asyncWait = (ms: number): Promise<void> =>
-  new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
