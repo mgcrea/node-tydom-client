@@ -31,17 +31,19 @@ export interface TydomClientOptions extends TydomClientConnectOptions {
   retryOnClose?: boolean;
 }
 
-export const defaultOptions: Required<Pick<
-  TydomClientOptions,
-  | 'userAgent'
-  | 'hostname'
-  | 'keepAlive'
-  | 'closeOnExit'
-  | 'keepAliveInterval'
-  | 'requestTimeout'
-  | 'followUpDebounce'
-  | 'retryOnClose'
->> = {
+export const defaultOptions: Required<
+  Pick<
+    TydomClientOptions,
+    | 'userAgent'
+    | 'hostname'
+    | 'keepAlive'
+    | 'closeOnExit'
+    | 'keepAliveInterval'
+    | 'requestTimeout'
+    | 'followUpDebounce'
+    | 'retryOnClose'
+  >
+> = {
   hostname: 'mediation.tydom.com',
   userAgent: USER_AGENT,
   keepAlive: true,
@@ -239,6 +241,7 @@ export default class TydomClient extends EventEmitter {
   send(rawHttpRequest: string): void {
     assert(this.socket instanceof WebSocket, 'Required socket instance, please use connect() first');
     if ([WebSocket.CLOSING, WebSocket.CLOSED].includes(this.socket.readyState)) {
+      debug(`Closed/closing socket instance, readyState=${this.socket.readyState} for request="${rawHttpRequest}"`);
       throw new Error('Socket instance is closing/closed, please reconnect with connect() first');
     }
     const {hostname} = this.config;
