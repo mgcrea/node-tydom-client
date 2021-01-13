@@ -44,7 +44,7 @@ const setupClient = async ({username, password, hostname}: TydomAuthOptions) => 
 };
 
 const requestCommand = async (argv: TydomRequestCommandOptions): Promise<void> => {
-  const {_: args, uri, file, verbose, username, password, hostname} = argv;
+  const {_: args, uri, file, verbose, username, password, hostname, method} = argv;
   const client = await setupClient({username, password, hostname});
   // Perform requests
   const [, ...extraUris] = args;
@@ -52,9 +52,13 @@ const requestCommand = async (argv: TydomRequestCommandOptions): Promise<void> =
   log(`Performing ${uris.length} request(s) to "${hostname}"...`);
   const results = await uris.reduce<Promise<TydomResult>>(async (promiseSoFar, uri) => {
     const soFar = await promiseSoFar;
-    log(`Performing GET request to "${uri}"...`);
-    soFar[uri] = await client.get(uri);
-    log(`Performed GET request to "${uri}".`);
+    log(`Performing ${method} request to "${uri}"...`);
+    if (method === 'GET') {
+      soFar[uri] = await client.get(uri);
+    } else if (method === 'POST') {
+      soFar[uri] = await client.post(uri);
+    }
+    log(`Performed ${method} request to "${uri}".`);
     return soFar;
   }, Promise.resolve({}));
   log(`Performed ${uris.length} request(s) to "${hostname}".`);
@@ -109,6 +113,11 @@ yargs
     type: 'string',
     describe: 'request hostname',
     default: 'mediation.tydom.com'
+  })
+  .option('method', {
+    type: 'string',
+    describe: 'request method',
+    default: 'GET'
   })
   .demandOption(['username', 'password', 'hostname'])
   .command<TydomRequestCommandOptions>(

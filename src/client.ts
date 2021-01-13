@@ -272,10 +272,8 @@ export default class TydomClient extends EventEmitter {
           requestTimeout > 0
             ? setTimeout(() => {
                 debug(`Timeout for request "${rawHttpRequest.replace(/\r\n/g, '\\r\\n')}"`);
-                if (this.socket instanceof WebSocket) {
-                  debug(`Closing the socket following request timeout to trigger keepAlive`);
-                  this.socket.close();
-                }
+                debug(`Closing the socket following request timeout to trigger a reconnection`);
+                this.close();
               }, requestTimeout)
             : null;
         this.pool.set(requestId, {resolve: resolveBody, reject, timeout});
