@@ -60,7 +60,7 @@ export type Client = Got & {
 
 export const setupGotClient = (config: Required<TydomClientOptions>): Client => {
   const {hostname, username, userAgent} = config;
-  // const isRemote = hostname === 'mediation.tydom.com';
+  const isRemote = hostname === 'mediation.tydom.com';
   const client = got.extend({
     prefixUrl: `https://${hostname}`,
     // prefixUrl: `https://request.mgcrea.io/status/500/200`,
@@ -87,7 +87,7 @@ export const setupGotClient = (config: Required<TydomClientOptions>): Client => 
     responseType: 'json',
     throwHttpErrors: false,
     https: {
-      rejectUnauthorized: false
+      rejectUnauthorized: isRemote
     }
   });
 
