@@ -199,15 +199,13 @@ export default class TydomClient extends EventEmitter {
                   this.attemptCount
                 )}-th time ...`
               );
-              try {
-                this.connect();
-              } catch (err) {
+              this.connect().catch((err) => {
                 debug(
-                  `Failed attempt to reconnect to hostname=${chalkString(hostname)} for the ${chalkNumber(
-                    this.attemptCount
-                  )}-th time!`
+                  `Failed attempt to reconnect to hostname=${chalkString(hostname)} with err=${chalkString(
+                    err.message
+                  )} for the ${chalkNumber(this.attemptCount)}-th time!`
                 );
-              }
+              });
               // Consider attempt successful after a 60s+ stable connection
               this.retrySuccessTimeout = setTimeout(() => {
                 debug(
@@ -240,6 +238,7 @@ export default class TydomClient extends EventEmitter {
   }
   send(rawHttpRequest: string): void {
     assert(this.socket instanceof WebSocket, 'Required socket instance, please use connect() first');
+    // @ts-expect-error wtf?
     if ([WebSocket.CLOSING, WebSocket.CLOSED].includes(this.socket.readyState)) {
       debug(`Closed/closing socket instance, readyState=${this.socket.readyState} for request="${rawHttpRequest}"`);
       throw new Error('Socket instance is closing/closed, please reconnect with connect() first');
