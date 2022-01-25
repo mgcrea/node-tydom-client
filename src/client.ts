@@ -82,16 +82,8 @@ export default class TydomClient extends EventEmitter {
     return `${nextUniqueId}`;
   }
   public async connect(): Promise<WebSocket> {
-    const {
-      username,
-      password,
-      hostname,
-      userAgent,
-      keepAlive,
-      closeOnExit,
-      keepAliveInterval,
-      retryOnClose
-    } = this.config;
+    const {username, password, hostname, userAgent, keepAlive, closeOnExit, keepAliveInterval, retryOnClose} =
+      this.config;
     const isRemote = hostname === 'mediation.tydom.com';
     // Http Login
     const {uri, realm, nonce, qop} = await this.client.login();
