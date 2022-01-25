@@ -1,11 +1,24 @@
+<!-- markdownlint-disable no-inline-html -->
+
 # Node.js Tydom Client
 
-[![npm version](https://img.shields.io/npm/v/tydom-client.svg)](https://github.com/mgcrea/node-tydom-client/releases)
-[![license](https://img.shields.io/github/license/mgcrea/node-tydom-client.svg?style=flat)](https://tldrlegal.com/license/mit-license)
-[![build status](https://travis-ci.com/mgcrea/node-tydom-client.svg?branch=master)](https://travis-ci.com/mgcrea/node-tydom-client)
-[![dependencies status](https://david-dm.org/mgcrea/node-tydom-client/status.svg)](https://david-dm.org/mgcrea/node-tydom-client)
-[![devDependencies status](https://david-dm.org/mgcrea/node-tydom-client/dev-status.svg)](https://david-dm.org/mgcrea/node-tydom-client?type=dev)
-[![coverage](https://codecov.io/gh/mgcrea/node-tydom-client/branch/master/graph/badge.svg)](https://codecov.io/gh/mgcrea/node-tydom-client)
+<p align="center">
+  <a href="https://www.npmjs.com/package/node-tydom-client">
+    <img src="https://img.shields.io/npm/v/node-tydom-client.svg?style=for-the-badge" alt="npm version" />
+  </a>
+  <!-- <a href="https://www.npmjs.com/package/node-tydom-client">
+    <img src="https://img.shields.io/npm/dt/node-tydom-client.svg?style=for-the-badge" alt="npm total downloads" />
+  </a> -->
+  <a href="https://www.npmjs.com/package/node-tydom-client">
+    <img src="https://img.shields.io/npm/dm/node-tydom-client.svg?style=for-the-badge" alt="npm monthly downloads" />
+  </a>
+  <a href="https://www.npmjs.com/package/node-tydom-client">
+    <img src="https://img.shields.io/npm/l/node-tydom-client.svg?style=for-the-badge" alt="npm license" />
+  </a>
+  <a href="https://github.com/mgcrea/node-tydom-client/actions/workflows/main.yml">
+    <img src="https://img.shields.io/github/workflow/status/mgcrea/node-tydom-client/main?style=for-the-badge" alt="github main workflow" />
+  </a>
+</p>
 
 Easily manage [Tydom hardware](https://www.deltadore.fr/domotique/pilotage-maison-connectee/box-domotique/tydom-2-0-ref-6414118) by [Delta Dore](https://www.deltadore.fr/) from [Node.js](https://nodejs.org/en/).
 
@@ -130,10 +143,7 @@ const client = createClient({username, password, hostname});
 
 ## Authors
 
-**Olivier Louvignes**
-
-- http://olouv.com
-- http://github.com/mgcrea
+- [Olivier Louvignes](https://github.com/mgcrea) <<olivier@mgcrea.io>>
 
 ### Credits
 
@@ -142,26 +152,21 @@ const client = createClient({username, password, hostname});
 
 ## License
 
-```
+```md
 The MIT License
 
-Copyright (c) 2019 Olivier Louvignes <olivier@mgcrea.io>
+Copyright (c) 2020 Olivier Louvignes <olivier@mgcrea.io>
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
+rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit
+persons to whom the Software is furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the
+Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ```
