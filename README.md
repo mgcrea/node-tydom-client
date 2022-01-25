@@ -3,17 +3,17 @@
 # Node.js Tydom Client
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/node-tydom-client">
-    <img src="https://img.shields.io/npm/v/node-tydom-client.svg?style=for-the-badge" alt="npm version" />
+  <a href="https://www.npmjs.com/package/tydom-client">
+    <img src="https://img.shields.io/npm/v/tydom-client.svg?style=for-the-badge" alt="npm version" />
   </a>
-  <!-- <a href="https://www.npmjs.com/package/node-tydom-client">
-    <img src="https://img.shields.io/npm/dt/node-tydom-client.svg?style=for-the-badge" alt="npm total downloads" />
+  <!-- <a href="https://www.npmjs.com/package/tydom-client">
+    <img src="https://img.shields.io/npm/dt/tydom-client.svg?style=for-the-badge" alt="npm total downloads" />
   </a> -->
-  <a href="https://www.npmjs.com/package/node-tydom-client">
-    <img src="https://img.shields.io/npm/dm/node-tydom-client.svg?style=for-the-badge" alt="npm monthly downloads" />
+  <a href="https://www.npmjs.com/package/tydom-client">
+    <img src="https://img.shields.io/npm/dm/tydom-client.svg?style=for-the-badge" alt="npm monthly downloads" />
   </a>
-  <a href="https://www.npmjs.com/package/node-tydom-client">
-    <img src="https://img.shields.io/npm/l/node-tydom-client.svg?style=for-the-badge" alt="npm license" />
+  <a href="https://www.npmjs.com/package/tydom-client">
+    <img src="https://img.shields.io/npm/l/tydom-client.svg?style=for-the-badge" alt="npm license" />
   </a>
   <a href="https://github.com/mgcrea/node-tydom-client/actions/workflows/main.yml">
     <img src="https://img.shields.io/github/workflow/status/mgcrea/node-tydom-client/main?style=for-the-badge" alt="github main workflow" />

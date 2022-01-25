@@ -14,7 +14,7 @@
     "spec:watch": "npm run spec --watch",
     "spec:coverage": "npm run spec --coverage",
     "lint": "eslint --ext .ts src/",
-    "pretty": "prettier --check '{src,test}/**/*.ts'",
+    "prettycheck": "prettier --check '{src,test}/**/*.ts'",
     "typecheck": "tsc --noEmit",
     "build": "tsc --build",
     "prepublishOnly": "npm run build"
