@@ -8,16 +8,16 @@
   "repository": "github:mgcrea/node-tydom-client",
   "license": "MIT",
   "scripts": {
-    "start": "yarn spec:watch",
-    "test": "yarn pretty && yarn lint && yarn spec",
+    "start": "npm run spec:watch",
+    "test": "npm run pretty && npm run lint && npm run spec",
     "spec": "NODE_TLS_REJECT_UNAUTHORIZED=0 CI=true jest --runInBand --colors",
-    "spec:watch": "yarn spec --watch",
-    "spec:coverage": "yarn spec --coverage",
+    "spec:watch": "npm run spec --watch",
+    "spec:coverage": "npm run spec --coverage",
     "lint": "eslint --ext .ts src/",
     "pretty": "prettier --check '{src,test}/**/*.ts'",
     "typecheck": "tsc --noEmit",
     "build": "tsc --build",
-    "prepare": "yarn build"
+    "prepublishOnly": "npm run build"
   },
   "bin": {
     "tydom": "lib/cli/tydom.js"
