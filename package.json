@@ -23,7 +23,7 @@
     "tydom": "lib/cli/tydom.js"
   },
   "dependencies": {
-    "chalk": "^5.0.0",
+    "chalk": "^4.1.2",
     "debug": "^4.3.3",
     "got": "^11.8.2",
     "http-parser-js": "^0.5.5",

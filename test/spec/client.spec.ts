@@ -56,7 +56,7 @@ describe('client', () => {
     } catch (err) {
       // @NOTE nock does not properly reply to Websocket handshakes for now
       expect(err).toBeInstanceOf(Error);
-      expect(err.message).toEqual('Unexpected server response: 101');
+      expect((err as Error).message).toEqual('Unexpected server response: 101');
     }
   });
   it('should properly connect to a local tydom server', async () => {
@@ -91,7 +91,7 @@ describe('client', () => {
     } catch (err) {
       // @NOTE nock does not properly reply to Websocket handshakes for now
       expect(err).toBeInstanceOf(Error);
-      expect(err.message).toEqual('Unexpected server response: 101');
+      expect((err as Error).message).toEqual('Unexpected server response: 101');
     }
   });
 });
