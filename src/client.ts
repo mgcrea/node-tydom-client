@@ -162,9 +162,6 @@ export default class TydomClient extends EventEmitter {
             } finally {
               this.pool.delete(requestId);
             }
-          } else if (requestId) {
-            // Relay follow-up
-            this.emit(requestId, parsedMessage);
           } else if (parsedMessage) {
             // Relay message on client
             this.emit('message', parsedMessage);
