@@ -97,7 +97,7 @@ export default class TydomClient extends EventEmitter {
     };
     return new Promise((resolve, reject) => {
       debug(`Attempting to open new socket for hostname=${chalkString(hostname)}`);
-      const socket = new WebSocket(`https://${hostname}${uri}`, websocketOptions);
+      const socket = new WebSocket(`wss://${hostname}${uri}`, websocketOptions);
       socket.on('open', () => {
         debug(`Tydom socket opened for hostname=${chalkString(hostname)}`);
         this.socket = socket;
