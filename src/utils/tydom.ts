@@ -34,7 +34,7 @@ export const castTydomMessage = async ({
   status,
   type,
   uri,
-  date
+  date,
 }: CastTydomMessageProps): Promise<TydomHttpMessage> => {
   const hasBody = body.length > 0;
   const shouldBeJson =
@@ -65,37 +65,37 @@ export const setupGotClient = (config: Required<TydomClientOptions>): Client => 
     prefixUrl: `https://${hostname}`,
     // prefixUrl: `https://request.mgcrea.io/status/500/200`,
     headers: {
-      'User-Agent': userAgent
+      'User-Agent': userAgent,
     },
     retry: {
-      limit: Infinity
+      limit: Infinity,
     },
     hooks: {
       beforeRequest: [
         (options) => {
           const {method, url} = options;
           debug(`About to ${chalkKeyword(method)} request with url=${chalkString(url)}`);
-        }
+        },
       ],
       beforeRetry: [
         (options, _error, _retryCount) => {
           const {method, url} = options;
           debug(`About to retry ${chalkKeyword(method)} request with url=${chalkString(url)}`);
-        }
-      ]
+        },
+      ],
     },
     responseType: 'json',
     throwHttpErrors: false,
     https: {
-      rejectUnauthorized: isRemote
-    }
+      rejectUnauthorized: isRemote,
+    },
   });
 
   const login = async (): Promise<DigestAccessAuthenticationFields> => {
     const searchParams = new URLSearchParams({mac: username, appli: '1'}).toString();
     const uri = 'mediation/client';
     const {statusCode, headers} = await client.get<string>(uri, {
-      searchParams
+      searchParams,
     });
     assert(statusCode === 401, `Unexpected statusCode=${statusCode}`);
     const authHeader = headers['www-authenticate'];
@@ -107,7 +107,7 @@ export const setupGotClient = (config: Required<TydomClientOptions>): Client => 
         soFar[key.trim() as keyof DigestAccessAuthenticationFields] = value.slice(0, -1);
         return soFar;
       },
-      {uri: `/${uri}?${searchParams}`}
+      {uri: `/${uri}?${searchParams}`},
     ) as DigestAccessAuthenticationFields;
     return authFields;
   };

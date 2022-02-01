@@ -40,7 +40,7 @@ describe('client', () => {
         'Content-Length',
         '0',
         'Date',
-        'Fri, 15 Nov 2019 22:19:01 GMT'
+        'Fri, 15 Nov 2019 22:19:01 GMT',
       ]);
 
     nock(`https://mediation.tydom.com:443`)
@@ -49,7 +49,7 @@ describe('client', () => {
       .twice()
       .reply(101, undefined, {
         Connection: 'Upgrade',
-        Upgrade: 'websocket'
+        Upgrade: 'websocket',
       });
     try {
       await client.connect();
@@ -74,8 +74,8 @@ describe('client', () => {
           Connection: 'close',
           'Content-Type': 'text/html',
           'WWW-Authenticate':
-            'Digest  realm="Protected Area",  qop="auth",  nonce="cb584e44c43ed6bd0bc2d9c7e242837d",  opaque="94619f8a70068b2591c2eed622525b0e"'
-        }
+            'Digest  realm="Protected Area",  qop="auth",  nonce="cb584e44c43ed6bd0bc2d9c7e242837d",  opaque="94619f8a70068b2591c2eed622525b0e"',
+        },
       );
     nock(`https://${hostname}:443`)
       .get('/mediation/client')
@@ -84,7 +84,7 @@ describe('client', () => {
       .reply(101, undefined, {
         Server: 'Oryx Embedded HTTP Server',
         Connection: 'Upgrade',
-        Upgrade: 'websocket'
+        Upgrade: 'websocket',
       });
     try {
       await client.connect();

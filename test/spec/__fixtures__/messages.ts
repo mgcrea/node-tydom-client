@@ -100,7 +100,7 @@ export const getInfoResponse = Buffer.from(
     '}\r\n' +
     '0\r\n' +
     '\r\n',
-  'utf8'
+  'utf8',
 );
 
 export const updatedDevicesData = Buffer.from(
@@ -116,5 +116,5 @@ export const updatedDevicesData = Buffer.from(
     '\r\n' +
     '0\r\n' +
     '\r\n',
-  'utf8'
+  'utf8',
 );

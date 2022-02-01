@@ -39,7 +39,7 @@ export const parseIncomingMessage = async (data: Buffer): Promise<TydomBinaryMes
             index % 2 ? soFar.headers.set(soFar.lastValue.toLowerCase(), value) : (soFar.lastValue = value);
             return soFar;
           },
-          {headers, lastValue: ''}
+          {headers, lastValue: ''},
         ).headers;
       };
       parser.onBody = (chunk: Buffer, offset: number, length: number) => {
@@ -112,7 +112,7 @@ export type DigestAccessAuthenticationHeader = {
 
 export const computeDigestAccessAuthenticationHeader = async (
   {username, password}: DigestAccessAuthenticationOptions,
-  {uri, realm, qop, nonce /*, opaque */}: DigestAccessAuthenticationFields
+  {uri, realm, qop, nonce /*, opaque */}: DigestAccessAuthenticationFields,
 ): Promise<DigestAccessAuthenticationHeader> => {
   const nc = getRequestCounter();
   const cnonce = (await getRandomBytes(4)).toString('hex');

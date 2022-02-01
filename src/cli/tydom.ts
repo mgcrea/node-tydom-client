@@ -88,8 +88,8 @@ const listenCommand = async (argv: TydomListenCommandOptions): Promise<void> => 
     const {type, uri, method, status, body, date} = message;
     log(
       `[${chalk.yellow(date.toISOString())}] Received new ${chalkKeyword(type)} message on Tydom socket, ${chalkKeyword(
-        method
-      )} on uri=${chalkString(uri)}" with status=${status}, body:\n${chalkJson(body)}`
+        method,
+      )} on uri=${chalkString(uri)}" with status=${status}, body:\n${chalkJson(body)}`,
     );
     if (verbose) {
       dir({message});
@@ -102,22 +102,22 @@ yargs
   .option('username', {
     type: 'string',
     describe: 'tydom username',
-    default: TYDOM_USERNAME
+    default: TYDOM_USERNAME,
   })
   .option('password', {
     type: 'string',
     describe: 'tydom password',
-    default: TYDOM_PASSWORD
+    default: TYDOM_PASSWORD,
   })
   .option('hostname', {
     type: 'string',
     describe: 'request hostname',
-    default: 'mediation.tydom.com'
+    default: 'mediation.tydom.com',
   })
   .option('method', {
     type: 'string',
     describe: 'request method',
-    default: 'GET'
+    default: 'GET',
   })
   .demandOption(['username', 'password', 'hostname'])
   .command<TydomRequestCommandOptions>(
@@ -128,7 +128,7 @@ yargs
         .example('$0 request /info --file info.json', '')
         .positional('uri', {
           type: 'string',
-          describe: 'request uri'
+          describe: 'request uri',
         })
         // .option('method', {
         //   type: 'string',
@@ -138,11 +138,11 @@ yargs
         // })
         .option('file', {
           type: 'string',
-          describe: 'save to file'
+          describe: 'save to file',
         })
         .demandOption(['uri']);
     },
-    requestCommand
+    requestCommand,
   )
   .command<TydomListenCommandOptions>(
     'listen',
@@ -150,12 +150,12 @@ yargs
     (yargs) => {
       yargs.example('$0 listen', '');
     },
-    listenCommand
+    listenCommand,
   )
   .option('verbose', {
     alias: 'v',
     type: 'boolean',
-    description: 'Run with verbose logging'
+    description: 'Run with verbose logging',
   })
   .demandCommand()
   .help().argv;

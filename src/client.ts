@@ -11,7 +11,7 @@ import {
   buildRawHttpRequest,
   BuildRawHttpRequestOptions,
   computeDigestAccessAuthenticationHeader,
-  parseIncomingMessage
+  parseIncomingMessage,
 } from './utils/http';
 import {Client, setupGotClient, TydomHttpMessage, TydomResponse} from './utils/tydom';
 
@@ -51,7 +51,7 @@ export const defaultOptions: Required<
   requestTimeout: 5 * 1000,
   keepAliveInterval: 30 * 1000,
   followUpDebounce: 400,
-  retryOnClose: true
+  retryOnClose: true,
 };
 
 export const createClient = (options: TydomClientOptions): TydomClient => new TydomClient(options);
@@ -89,11 +89,11 @@ export default class TydomClient extends EventEmitter {
     const {uri, realm, nonce, qop} = await this.client.login();
     const {header: authHeader} = await computeDigestAccessAuthenticationHeader(
       {username, password},
-      {uri, realm, nonce, qop}
+      {uri, realm, nonce, qop},
     );
     // WebSocket
     const websocketOptions: WebSocket.ClientOptions = {
-      headers: {'User-Agent': userAgent, Authorization: authHeader}
+      headers: {'User-Agent': userAgent, Authorization: authHeader},
     };
     return new Promise((resolve, reject) => {
       debug(`Attempting to open new socket for hostname=${chalkString(hostname)}`);
@@ -121,8 +121,8 @@ export default class TydomClient extends EventEmitter {
       socket.on('message', async (data: Buffer) => {
         debug(
           `Tydom socket received a ${chalkNumber(data.length)}-sized message received for hostname=${chalkString(
-            hostname
-          )}`
+            hostname,
+          )}`,
         );
         try {
           const parsedMessage = await parseIncomingMessage(isRemote ? data.slice('\x02'.length) : data);
@@ -130,15 +130,15 @@ export default class TydomClient extends EventEmitter {
           if (type === 'binary') {
             debug(
               `Parsed ${chalkNumber(data.length)}-sized received message as ${chalk.blue(type)}:\n${chalk.grey(
-                toHexString(data)
-              )}`
+                toHexString(data),
+              )}`,
             );
             return;
           }
           debug(
             `Parsed ${chalkNumber(data.length)}-sized received message as ${chalk.blue(type)}:\n${chalk.grey(
-              data.toString('utf8')
-            )}`
+              data.toString('utf8'),
+            )}`,
           );
           const requestId = (parsedMessage as TydomHttpMessage).headers.get('transac-id') as string;
           if (requestId && this.pool.has(requestId)) {
@@ -180,27 +180,27 @@ export default class TydomClient extends EventEmitter {
             this.attemptCount += 1;
             const actualReconnectTimeout = Math.max(1000, calculateDelay({attemptCount: this.attemptCount}));
             debug(
-              `Configuring socket reconnection timeout of ~${chalkNumber(Math.round(actualReconnectTimeout / 1000))}s`
+              `Configuring socket reconnection timeout of ~${chalkNumber(Math.round(actualReconnectTimeout / 1000))}s`,
             );
             this.reconnectTimeout = setTimeout(() => {
               debug(
                 `About to attempt to reconnect to hostname=${chalkString(hostname)} for the ${chalkNumber(
-                  this.attemptCount
-                )}-th time ...`
+                  this.attemptCount,
+                )}-th time ...`,
               );
               this.connect().catch((err) => {
                 debug(
                   `Failed attempt to reconnect to hostname=${chalkString(hostname)} with err=${chalkString(
-                    err.message
-                  )} for the ${chalkNumber(this.attemptCount)}-th time!`
+                    err.message,
+                  )} for the ${chalkNumber(this.attemptCount)}-th time!`,
                 );
               });
               // Consider attempt successful after a 60s+ stable connection
               this.retrySuccessTimeout = setTimeout(() => {
                 debug(
                   `Reconnection to hostname=${chalkString(hostname)} for the ${chalkNumber(
-                    this.attemptCount
-                  )}-th time was successful (> 60s), will reset \`attemptCount\``
+                    this.attemptCount,
+                  )}-th time was successful (> 60s), will reset \`attemptCount\``,
                 );
                 this.attemptCount = 0;
               }, 60 * 1000);
@@ -238,20 +238,20 @@ export default class TydomClient extends EventEmitter {
   }
   private async request<T extends TydomResponse = TydomResponse>(
     {url, method, headers: extraHeaders = {}, body}: BuildRawHttpRequestOptions,
-    requestId: string = this.uniqueId()
+    requestId: string = this.uniqueId(),
   ): Promise<T> {
     const {requestTimeout} = this.config;
     const headers = {
       ...extraHeaders,
       'content-length': `${body ? body.length : 0}`,
       'content-type': 'application/json; charset=utf-8',
-      'transac-id': requestId
+      'transac-id': requestId,
     };
     const rawHttpRequest = buildRawHttpRequest({url, method, headers, body});
     debug(
       `Writing ${chalkNumber(rawHttpRequest.length)}-sized request on Tydom socket:\n${chalk.grey(
-        rawHttpRequest.replace(/\r\n/g, '\\r\\n')
-      )}`
+        rawHttpRequest.replace(/\r\n/g, '\\r\\n'),
+      )}`,
     );
     return new Promise((resolve, reject) => {
       try {
