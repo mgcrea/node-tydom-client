@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+
 process.env.DEBUG = `${process.env.DEBUG} tydom-client`.trim();
 
 import chalk from 'chalk';
@@ -30,6 +31,7 @@ type TydomGlobalOptions = TydomAuthOptions & {
 type TydomRequestCommandOptions = TydomGlobalOptions & {
   uri: string;
   method: 'GET' | 'PUT' | 'POST';
+  command: boolean;
   file?: string;
 };
 
@@ -43,8 +45,8 @@ const setupClient = async ({username, password, hostname}: TydomAuthOptions) => 
   return client;
 };
 
-const requestCommand = async (argv: TydomRequestCommandOptions): Promise<void> => {
-  const {_: args, uri, file, verbose, username, password, hostname, method} = argv;
+const performRequest = async (argv: TydomRequestCommandOptions): Promise<void> => {
+  const {_: args, uri, file, verbose, username, password, hostname, method, command} = argv;
   const client = await setupClient({username, password, hostname});
   // Perform requests
   const [, ...extraUris] = args;
@@ -53,7 +55,9 @@ const requestCommand = async (argv: TydomRequestCommandOptions): Promise<void> =
   const results = await uris.reduce<Promise<TydomResult>>(async (promiseSoFar, uri) => {
     const soFar = await promiseSoFar;
     log(`Performing ${method} request to "${uri}"...`);
-    if (method === 'GET') {
+    if (command) {
+      soFar[uri] = await client.command(uri);
+    } else if (method === 'GET') {
       soFar[uri] = await client.get(uri);
     } else if (method === 'POST') {
       soFar[uri] = await client.post(uri);
@@ -119,6 +123,11 @@ yargs
     describe: 'request method',
     default: 'GET',
   })
+  .option('command', {
+    type: 'boolean',
+    describe: 'request command',
+    default: false,
+  })
   .demandOption(['username', 'password', 'hostname'])
   .command<TydomRequestCommandOptions>(
     'request [uri]',
@@ -142,7 +151,7 @@ yargs
         })
         .demandOption(['uri']);
     },
-    requestCommand,
+    performRequest,
   )
   .command<TydomListenCommandOptions>(
     'listen',

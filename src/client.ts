@@ -157,6 +157,8 @@ export default class TydomClient extends EventEmitter {
           } else if (parsedMessage) {
             // Relay message on client
             this.emit('message', parsedMessage);
+            // Dyanmic requestId relay for specific command requests
+            this.emit(requestId, parsedMessage);
           }
         } catch (err) {
           debug(`Failed to properly parse message hex=[${toHexString(data)}]`);
