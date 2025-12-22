@@ -2,12 +2,25 @@
   "name": "tydom-client",
   "version": "0.13.4",
   "description": "Easily manage Tydom hardware by Delta Dore from Node.js",
-  "type": "module",
-  "main": "lib/index.js",
-  "types": "lib/index.d.ts",
   "author": "Olivier Louvignes <olivier@mgcrea.io>",
   "repository": "github:mgcrea/node-tydom-client",
   "license": "MIT",
+  "type": "module",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
   "scripts": {
     "start": "tsx src/cli/tydom.ts",
     "dev": "DEBUG=tydom-client tsx --inspect --watch src/cli/tydom.ts",
@@ -22,7 +35,7 @@
     "prepublishOnly": "pnpm run build"
   },
   "bin": {
-    "tydom": "lib/cli/tydom.js"
+    "tydom": "dist/cli/tydom.js"
   },
   "dependencies": {
     "debug": "^4.4.3",
