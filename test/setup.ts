@@ -1,15 +1,15 @@
-/* eslint-disable @typescript-eslint/no-namespace */
-/* eslint-disable no-var */
-
-import {warn} from 'console';
-import {inspect} from 'util';
+import { warn } from "console";
+import { inspect } from "util";
+import { expect } from "vitest";
 
 declare global {
-  var d: Console['warn'];
-  var dd: Console['warn'];
+  var d: Console["warn"];
+  var dd: Console["warn"];
 }
 
-globalThis.d = (...args: unknown[]) => warn(inspect(args.length > 1 ? args : args[0], {colors: true, depth: 10}));
+globalThis.d = (...args: unknown[]) => {
+  warn(inspect(args.length > 1 ? args : args[0], { colors: true, depth: 10 }));
+};
 globalThis.dd = (...args: unknown[]) => {
   global.d(...args);
   expect(1).toEqual(2);

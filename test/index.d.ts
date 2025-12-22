@@ -1,6 +1,6 @@
-declare module NodeJS {
-  interface Global {
-    d: (obj: any) => void;
+declare namespace NodeJS {
+  type Global = {
+    d: (obj: unknown) => void;
     t: number;
-  }
+  };
 }
