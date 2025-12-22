@@ -1,10 +1,10 @@
-name: main
+name: Test & Build Package
 
 on:
   push:
-    branches: [master]
+    branches: [master, main]
   pull_request:
-    branches: [master]
+    branches: [master, main]
   workflow_dispatch:
 
 jobs:
@@ -12,43 +12,50 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node: ['12', '14', '16']
+        node: ["lts-1/*", "lts/*"]
     name: Test on node@v${{ matrix.node }}
     steps:
       - name: Checkout 🛎️
-        uses: actions/checkout@v2
-      - name: Setup 🔧
-        uses: actions/setup-node@v2
+        uses: actions/checkout@v5
+      - name: Setup pnpm 🔧
+        uses: pnpm/action-setup@v4
+      - name: Setup Node.js 🔧
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node }}
           check-latest: true
-          cache: 'npm'
-      - name: Install 🪄
-        run: npm ci
+          cache: "pnpm"
+      - name: Install dependencies 🪄
+        run: pnpm install --frozen-lockfile
       - name: Lint 🔍
-        run: npm run lint
-      - name: Prettier 🔍
-        run: npm run prettycheck
+        run: pnpm run lint
       - name: TypeScript 🔍
-        run: npm run typecheck
-      - name: Jest 🔍
-        run: npm run spec
+        run: pnpm run check
+      - name: Vitest 🔍
+        run: pnpm run spec
+      - name: Upload coverage to Codecov 📊
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./coverage/coverage-final.json
+          token: ${{ secrets.CODECOV_TOKEN }}
   build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node: ['12', '14', '16']
+        node: ["lts-1/*", "lts/*"]
     name: Build on node@v${{ matrix.node }}
     steps:
       - name: Checkout 🛎️
-        uses: actions/checkout@v2
-      - name: Setup 🔧
-        uses: actions/setup-node@v2
+        uses: actions/checkout@v5
+      - name: Setup pnpm 🔧
+        uses: pnpm/action-setup@v4
+      - name: Setup node 🔧
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node }}
           check-latest: true
-          cache: 'npm'
+          cache: "pnpm"
       - name: Install 🪄
-        run: npm ci
+        run: pnpm install --frozen-lockfile
       - name: Build 💎
-        run: npm run build
+        run: pnpm run build
