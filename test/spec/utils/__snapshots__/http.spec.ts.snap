@@ -1,7 +1,7 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`parseIncomingMessage should properly parse a getInfoResponse response 1`] = `
-Array [
+exports[`parseIncomingMessage > should properly parse a getInfoResponse response 1`] = `
+[
   "type",
   "uri",
   "method",
@@ -12,9 +12,9 @@ Array [
 ]
 `;
 
-exports[`parseIncomingMessage should properly parse a getInfoResponse response 2`] = `
-Object {
-  "body": Object {
+exports[`parseIncomingMessage > should properly parse a getInfoResponse response 2`] = `
+{
+  "body": {
     "TYDOM.dat": 1,
     "apiMode": true,
     "bdd.json": 11,
@@ -23,7 +23,7 @@ Object {
     "bdd_mig.json": 0,
     "bootReference": "P21260012",
     "bootVersion": "01.00.03",
-    "clock": Object {
+    "clock": {
       "clock": "2020-01-17T13:12:13+01:00",
       "summerOffset": "ON",
       "timezone": 60,
@@ -32,7 +32,7 @@ Object {
     "config": "prod",
     "config.json": 1,
     "gateway.dat": 0,
-    "geoloc": Object {
+    "geoloc": {
       "latitude": 48897412,
       "longitude": 2125472,
     },
@@ -49,8 +49,8 @@ Object {
     "mainVersionSW": "02.02.53",
     "mom.json": 0,
     "mom_api.json": 105,
-    "moments": Object {
-      "suspend": Object {
+    "moments": {
+      "suspend": {
         "to": 0,
       },
     },
@@ -75,8 +75,8 @@ Object {
 }
 `;
 
-exports[`parseIncomingMessage should properly parse a updatedDevicesData response 1`] = `
-Array [
+exports[`parseIncomingMessage > should properly parse a updatedDevicesData response 1`] = `
+[
   "type",
   "uri",
   "method",
@@ -87,19 +87,19 @@ Array [
 ]
 `;
 
-exports[`parseIncomingMessage should properly parse a updatedDevicesData response 2`] = `
-Object {
-  "body": Array [
-    Object {
-      "endpoints": Array [
-        Object {
-          "data": Array [
-            Object {
+exports[`parseIncomingMessage > should properly parse a updatedDevicesData response 2`] = `
+{
+  "body": [
+    {
+      "endpoints": [
+        {
+          "data": [
+            {
               "name": "level",
               "validity": "upToDate",
               "value": 100,
             },
-            Object {
+            {
               "name": "onFavPos",
               "validity": "upToDate",
               "value": false,
