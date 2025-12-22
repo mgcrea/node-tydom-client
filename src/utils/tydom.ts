@@ -1,24 +1,24 @@
-import got, {Got} from 'got';
-import {URLSearchParams} from 'url';
-import {TydomClientOptions} from '../client';
-import {assert} from './assert';
-import {chalkKeyword, chalkString} from './chalk';
-import debug from './debug';
-import {DigestAccessAuthenticationFields, MessageType} from './http';
+import got, { Got } from "got";
+import { URLSearchParams } from "url";
+import { TydomClientOptions } from "../client";
+import { assert } from "./assert";
+import { chalkKeyword, chalkString } from "./chalk";
+import debug from "./debug";
+import { DigestAccessAuthenticationFields, MessageType } from "./http";
 
-export type TydomResponse = Record<string, unknown> | Array<Record<string, unknown>>;
+export type TydomResponse = Record<string, unknown> | Record<string, unknown>[];
 
 export type CastTydomMessageProps = {
   body: string;
   headers: Map<string, string>;
-  method: 'GET' | 'PUT' | string | null;
+  method: string | null;
   status: number | null;
   type: MessageType;
   uri: string;
   date: Date;
 };
 
-export type TydomHttpMessage = CastTydomMessageProps & {
+export type TydomHttpMessage = Omit<CastTydomMessageProps, "body"> & {
   body: TydomResponse;
 };
 
@@ -37,21 +37,22 @@ export const castTydomMessage = async ({
   date,
 }: CastTydomMessageProps): Promise<TydomHttpMessage> => {
   const hasBody = body.length > 0;
-  const shouldBeJson =
-    headers.has('content-type') && (headers.get('content-type') as string).includes('application/json');
-  const isActuallyHtml = hasBody && body.startsWith('<!doctype html>');
+  const contentType = headers.get("content-type");
+  const shouldBeJson = contentType?.includes("application/json") ?? false;
+  const isActuallyHtml = hasBody && body.startsWith("<!doctype html>");
   const isError = shouldBeJson && isActuallyHtml;
   const actualStatus = status === 200 && isError ? 400 : status;
-  const json = async () => {
+  // eslint-disable-next-line @typescript-eslint/require-await
+  const json = async (): Promise<TydomResponse> => {
     if (!hasBody || !shouldBeJson) {
       return {};
     }
-    if (shouldBeJson && isActuallyHtml) {
-      return {error: 1, body};
+    if (isActuallyHtml) {
+      return { error: 1, body };
     }
-    return JSON.parse(body);
+    return JSON.parse(body) as TydomResponse;
   };
-  return {type, uri, method, status: actualStatus, body: await json(), headers, date};
+  return { type, uri, method, status: actualStatus, body: await json(), headers, date };
 };
 
 export type Client = Got & {
@@ -59,13 +60,13 @@ export type Client = Got & {
 };
 
 export const setupGotClient = (config: Required<TydomClientOptions>): Client => {
-  const {hostname, username, userAgent} = config;
-  const isRemote = hostname === 'mediation.tydom.com';
+  const { hostname, username, userAgent } = config;
+  const isRemote = hostname === "mediation.tydom.com";
   const client = got.extend({
     prefixUrl: `https://${hostname}`,
     // prefixUrl: `https://request.mgcrea.io/status/500/200`,
     headers: {
-      'User-Agent': userAgent,
+      "User-Agent": userAgent,
     },
     retry: {
       limit: Infinity,
@@ -73,18 +74,17 @@ export const setupGotClient = (config: Required<TydomClientOptions>): Client => 
     hooks: {
       beforeRequest: [
         (options) => {
-          const {method, url} = options;
+          const { method, url } = options;
           debug(`About to ${chalkKeyword(method)} request with url=${chalkString(url)}`);
         },
       ],
       beforeRetry: [
-        (options, _error, _retryCount) => {
-          const {method, url} = options;
-          debug(`About to retry ${chalkKeyword(method)} request with url=${chalkString(url)}`);
+        (error, retryCount) => {
+          debug(`About to retry request (attempt ${retryCount}) after error: ${error.message}`);
         },
       ],
     },
-    responseType: 'json',
+    responseType: "json",
     throwHttpErrors: false,
     https: {
       rejectUnauthorized: isRemote,
@@ -92,25 +92,26 @@ export const setupGotClient = (config: Required<TydomClientOptions>): Client => 
   });
 
   const login = async (): Promise<DigestAccessAuthenticationFields> => {
-    const searchParams = new URLSearchParams({mac: username, appli: '1'}).toString();
-    const uri = 'mediation/client';
-    const {statusCode, headers} = await client.get<string>(uri, {
+    const searchParams = new URLSearchParams({ mac: username, appli: "1" }).toString();
+    const uri = "mediation/client";
+    const response = await client.get(uri, {
       searchParams,
+      responseType: "text",
     });
-    assert(statusCode === 401, `Unexpected statusCode=${statusCode}`);
-    const authHeader = headers['www-authenticate'];
+    assert(response.statusCode === 401, `Unexpected statusCode=${response.statusCode}`);
+    const authHeader = response.headers["www-authenticate"];
     assert(authHeader, 'Missing required "www-authenticate" header');
-    const authFieldsSplit = (authHeader as string).replace(/^Digest\s+/, '').split(',');
+    const authFieldsSplit = authHeader.replace(/^Digest\s+/, "").split(",");
     const authFields = authFieldsSplit.reduce(
       (soFar: Partial<DigestAccessAuthenticationFields>, field: string) => {
         const [key, value] = field.split('="');
         soFar[key.trim() as keyof DigestAccessAuthenticationFields] = value.slice(0, -1);
         return soFar;
       },
-      {uri: `/${uri}?${searchParams}`},
+      { uri: `/${uri}?${searchParams}` },
     ) as DigestAccessAuthenticationFields;
     return authFields;
   };
 
-  return Object.assign(client, {login});
+  return Object.assign(client, { login });
 };
