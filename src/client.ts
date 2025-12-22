@@ -327,10 +327,12 @@ export default class TydomClient extends EventEmitter<TydomClientEvents> {
     return new Promise(async (resolve, reject) => {
       const debounceResolve = debounce(() => resolve(results), followUpDebounce);
       this.on(requestId, ({ body }: TydomHttpMessage) => {
-        const values = get(body, "0.endpoints.0.cdata.0.values");
+        const cdata = get(body, "0.endpoints.0.cdata.0");
+        const values = get(cdata, "values");
         if (values) {
           results.push(values);
-        } else {
+        } else if (!get(cdata, "EOR")) {
+          // Only warn if it's not an End-Of-Response marker
           debug(`Unexpected command follow-up body="${chalkJson(body)}"`);
         }
         debounceResolve();
