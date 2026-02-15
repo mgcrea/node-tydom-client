@@ -15,6 +15,8 @@ import {
 } from "./utils/http";
 import { Client, setupGotClient, TydomHttpMessage, TydomResponse } from "./utils/tydom";
 
+export type TydomRequestBody = Record<string, unknown> | Record<string, unknown>[];
+
 export type TydomClientConnectOptions = {
   keepAlive?: boolean;
   closeOnExit?: boolean;
@@ -318,13 +320,13 @@ export default class TydomClient extends EventEmitter<TydomClientEvents> {
   }
   public async put<T extends TydomResponse = TydomResponse>(
     url: string,
-    body: Record<string, unknown> = {},
+    body: TydomRequestBody = {},
   ): Promise<T> {
     return await this.request<T>({ url, method: "PUT", body: JSON.stringify(body) });
   }
   public async post<T extends TydomResponse = TydomResponse>(
     url: string,
-    body: Record<string, unknown> = {},
+    body: TydomRequestBody = {},
   ): Promise<T> {
     return await this.request<T>({ url, method: "POST", body: JSON.stringify(body) });
   }
