@@ -1,6 +1,6 @@
 {
   "name": "tydom-client",
-  "version": "0.13.4",
+  "version": "0.14.0",
   "description": "Easily manage Tydom hardware by Delta Dore from Node.js",
   "author": "Olivier Louvignes <olivier@mgcrea.io>",
   "repository": "github:mgcrea/node-tydom-client",
