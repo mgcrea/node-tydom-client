@@ -1,11 +1,11 @@
 import { EventEmitter } from "events";
 import * as chalk from "kolorist";
-import { debounce } from "lodash-es";
 import WebSocket from "ws";
 import { USER_AGENT } from "./config/env";
 import { assert } from "./utils/assert";
 import { calculateDelay } from "./utils/async";
 import { chalkJson, chalkNumber, chalkString } from "./utils/chalk";
+import { debounce } from "./utils/debounce";
 import debug, { dir, toHexString } from "./utils/debug";
 import {
   buildRawHttpRequest,
@@ -13,7 +13,7 @@ import {
   computeDigestAccessAuthenticationHeader,
   parseIncomingMessage,
 } from "./utils/http";
-import { Client, setupGotClient, TydomHttpMessage, TydomResponse } from "./utils/tydom";
+import { Client, setupClient, TydomHttpMessage, TydomResponse } from "./utils/tydom";
 
 export type TydomRequestBody = Record<string, unknown> | Record<string, unknown>[];
 
@@ -84,7 +84,7 @@ export default class TydomClient extends EventEmitter<TydomClientEvents> {
   constructor(options: TydomClientOptions) {
     super();
     this.config = { ...defaultOptions, ...options };
-    this.client = setupGotClient(this.config);
+    this.client = setupClient(this.config);
   }
   private uniqueId() {
     let nextUniqueId = Date.now();
