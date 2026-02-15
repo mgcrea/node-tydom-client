@@ -37,7 +37,9 @@ exports[`client > should properly create a client 2`] = `
     "username": "001A25123456",
   },
   undefined,
-  [Function],
+  {
+    "login": [Function],
+  },
   0,
   0,
   Map {},
