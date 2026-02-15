@@ -131,15 +131,16 @@ const client = createClient({username, password, hostname});
 
 | **Script**    | **Description**              |
 | ------------- | ---------------------------- |
-| start         | alias to `spec:watch`        |
-| test          | Run all tests                |
+| start         | Run the CLI with tsx         |
+| dev           | Run the CLI with debug/watch |
+| test          | Run lint + unit tests        |
 | spec          | Run unit tests               |
 | spec:coverage | Run unit tests with coverage |
 | spec:watch    | Watch unit tests             |
 | lint          | Run eslint static tests      |
-| pretty        | Run prettier static tests    |
+| format        | Run prettier formatting      |
+| check         | Run TypeScript type checking |
 | build         | Compile the library          |
-| build:watch   | Watch compilation            |
 
 ## Authors
 
