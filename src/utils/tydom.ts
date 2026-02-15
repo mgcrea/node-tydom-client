@@ -1,5 +1,3 @@
-import got, { Got } from "got";
-import { URLSearchParams } from "url";
 import { TydomClientOptions } from "../client";
 import { assert } from "./assert";
 import { chalkKeyword, chalkString } from "./chalk";
@@ -55,51 +53,23 @@ export const castTydomMessage = async ({
   return { type, uri, method, status: actualStatus, body: await json(), headers, date };
 };
 
-export type Client = Got & {
+export type Client = {
   login: () => Promise<DigestAccessAuthenticationFields>;
 };
 
-export const setupGotClient = (config: Required<TydomClientOptions>): Client => {
+export const setupClient = (config: Required<TydomClientOptions>): Client => {
   const { hostname, username, userAgent } = config;
-  const isRemote = hostname === "mediation.tydom.com";
-  const client = got.extend({
-    prefixUrl: `https://${hostname}`,
-    // prefixUrl: `https://request.mgcrea.io/status/500/200`,
-    headers: {
-      "User-Agent": userAgent,
-    },
-    retry: {
-      limit: Infinity,
-    },
-    hooks: {
-      beforeRequest: [
-        (options) => {
-          const { method, url } = options;
-          debug(`About to ${chalkKeyword(method)} request with url=${chalkString(url)}`);
-        },
-      ],
-      beforeRetry: [
-        (error, retryCount) => {
-          debug(`About to retry request (attempt ${retryCount}) after error: ${error.message}`);
-        },
-      ],
-    },
-    responseType: "json",
-    throwHttpErrors: false,
-    https: {
-      rejectUnauthorized: isRemote,
-    },
-  });
 
   const login = async (): Promise<DigestAccessAuthenticationFields> => {
     const searchParams = new URLSearchParams({ mac: username, appli: "1" }).toString();
     const uri = "mediation/client";
-    const response = await client.get(uri, {
-      searchParams,
-      responseType: "text",
+    const url = `https://${hostname}/${uri}?${searchParams}`;
+    debug(`About to ${chalkKeyword("GET")} request with url=${chalkString(url)}`);
+    const response = await fetch(url, {
+      headers: { "User-Agent": userAgent },
     });
-    assert(response.statusCode === 401, `Unexpected statusCode=${response.statusCode}`);
-    const authHeader = response.headers["www-authenticate"];
+    assert(response.status === 401, `Unexpected statusCode=${response.status}`);
+    const authHeader = response.headers.get("www-authenticate");
     assert(authHeader, 'Missing required "www-authenticate" header');
     const authFieldsSplit = authHeader.replace(/^Digest\s+/, "").split(",");
     const authFields = authFieldsSplit.reduce(
@@ -113,5 +83,5 @@ export const setupGotClient = (config: Required<TydomClientOptions>): Client => 
     return authFields;
   };
 
-  return Object.assign(client, { login });
+  return { login };
 };
