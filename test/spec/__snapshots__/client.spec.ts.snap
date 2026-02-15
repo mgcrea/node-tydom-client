@@ -15,6 +15,7 @@ exports[`client > should properly create a client 1`] = `
   "reconnectTimeout",
   "retrySuccessTimeout",
   "isExiting",
+  "exitListenersAttached",
 ]
 `;
 
@@ -43,6 +44,7 @@ exports[`client > should properly create a client 2`] = `
   undefined,
   undefined,
   undefined,
+  false,
   false,
 ]
 `;
