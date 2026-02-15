@@ -4,6 +4,9 @@
 !LICENSE*
 !README*
 !CHANGELOG*
-!lib/**/*.js
-!lib/**/*.js.map
-!lib/**/*.d.ts
+!dist/**/*.js
+!dist/**/*.cjs
+!dist/**/*.js.map
+!dist/**/*.cjs.map
+!dist/**/*.d.ts
+!dist/**/*.d.cts
