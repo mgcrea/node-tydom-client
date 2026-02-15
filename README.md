@@ -16,7 +16,7 @@
     <img src="https://img.shields.io/npm/l/tydom-client.svg?style=for-the-badge" alt="npm license" />
   </a>
   <a href="https://github.com/mgcrea/node-tydom-client/actions/workflows/main.yml">
-    <img src="https://img.shields.io/github/workflow/status/mgcrea/node-tydom-client/main?style=for-the-badge" alt="github main workflow" />
+    <img src="https://img.shields.io/github/actions/workflow/status/mgcrea/node-tydom-client/main.yml?style=for-the-badge" alt="github main workflow" />
   </a>
 </p>
 
@@ -75,12 +75,7 @@ You can use the provided factory function to quickly get a working client
 // to fix "self signed certificate" errors
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
-const {createClient} = require('tydom-client');
-// -or- use named exports (requires babel)
-// import {createClient} from 'tydom-client';
-// -or- destructure first when using Node.js native modules (eg. `--experimental-modules`)
-// import tydomClient from 'tydom-client';
-// const {createClient} = tydomClient;
+import {createClient} from 'tydom-client';
 
 const username = '001A25123456';
 const password = 'MyPassw0rd!';
@@ -88,24 +83,22 @@ const hostname = 'mediation.tydom.com'; // or '192.168.1.xxx'
 
 const client = createClient({username, password, hostname});
 
-(async () => {
-  console.log(`Connecting to "${hostname}"...`);
-  const socket = await client.connect();
-  // Get Tydom info
-  const info = await client.get('/info');
-  console.dir({info});
-  // Turn a light on
-  await client.put(`/devices/${MY_DEVICE_ID}/endpoints/${MY_DEVICE_ID}/data`, [
-    {
-      name: 'level',
-      value: 100
-    }
-  ]);
-  // Listen for external messages
-  client.on('message', (message) => {
-    console.dir({message});
-  });
-})();
+console.log(`Connecting to "${hostname}"...`);
+const socket = await client.connect();
+// Get Tydom info
+const info = await client.get('/info');
+console.dir({info});
+// Turn a light on
+await client.put(`/devices/${MY_DEVICE_ID}/endpoints/${MY_DEVICE_ID}/data`, [
+  {
+    name: 'level',
+    value: 100
+  }
+]);
+// Listen for external messages
+client.on('message', (message) => {
+  console.dir({message});
+});
 ```
 
 ### Known Tydom interface (wip)
