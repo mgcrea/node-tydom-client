@@ -197,7 +197,7 @@ export default class TydomClient extends EventEmitter<TydomClientEvents> {
       socket.on("close", () => {
         debug(`Tydom socket closed for hostname=${chalkString(hostname)}`);
         // Reject all pending requests to prevent hanging promises
-        for (const [requestId, handler] of this.pool) {
+        for (const [_requestId, handler] of this.pool) {
           if (handler.timeout) {
             clearTimeout(handler.timeout);
           }
