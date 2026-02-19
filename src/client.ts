@@ -196,6 +196,19 @@ export default class TydomClient extends EventEmitter<TydomClientEvents> {
       });
       socket.on("close", () => {
         debug(`Tydom socket closed for hostname=${chalkString(hostname)}`);
+        // Reject all pending requests to prevent hanging promises
+        for (const [requestId, handler] of this.pool) {
+          if (handler.timeout) {
+            clearTimeout(handler.timeout);
+          }
+          handler.reject(new Error("Socket closed while request was pending"));
+        }
+        this.pool.clear();
+        // Clear keepAlive to prevent pinging a dead socket
+        if (this.keepAliveInterval) {
+          clearInterval(this.keepAliveInterval);
+          this.keepAliveInterval = undefined;
+        }
         this.emit("disconnect");
         // Clear any pending successTimeout
         if (this.retrySuccessTimeout) {
