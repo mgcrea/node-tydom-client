@@ -210,54 +210,68 @@ export default class TydomClient extends EventEmitter<TydomClientEvents> {
           this.keepAliveInterval = undefined;
         }
         this.emit("disconnect");
-        // Clear any pending successTimeout
-        if (this.retrySuccessTimeout) {
-          clearTimeout(this.retrySuccessTimeout);
-        }
-        // Reconnect
-        if (this.reconnectTimeout) {
-          debug(`Removing existing reconnect timeout`);
-          clearTimeout(this.reconnectTimeout);
-        }
-        if (retryOnClose && !this.isExiting) {
-          setImmediate(() => {
-            this.attemptCount += 1;
-            const actualReconnectTimeout = Math.max(1000, calculateDelay({ attemptCount: this.attemptCount }));
-            debug(
-              `Configuring socket reconnection timeout of ~${chalkNumber(Math.round(actualReconnectTimeout / 1000))}s`,
-            );
-            this.reconnectTimeout = setTimeout(() => {
-              debug(
-                `About to attempt to reconnect to hostname=${chalkString(hostname)} for the ${chalkNumber(
-                  this.attemptCount,
-                )}-th time ...`,
-              );
-              this.connect().catch((err: unknown) => {
-                const message = err instanceof Error ? err.message : String(err);
-                debug(
-                  `Failed attempt to reconnect to hostname=${chalkString(hostname)} with err=${chalkString(
-                    message,
-                  )} for the ${chalkNumber(this.attemptCount)}-th time!`,
-                );
-              });
-              // Consider attempt successful after a 60s+ stable connection
-              this.retrySuccessTimeout = setTimeout(() => {
-                debug(
-                  `Reconnection to hostname=${chalkString(hostname)} for the ${chalkNumber(
-                    this.attemptCount,
-                  )}-th time was successful (> 60s), will reset \`attemptCount\``,
-                );
-                this.attemptCount = 0;
-              }, 60 * 1000);
-            }, actualReconnectTimeout);
-          });
-        }
+        // Schedule reconnection
+        this.scheduleReconnect();
       });
       socket.on("error", (err) => {
         this.attemptCount += 1;
         debug(`Tydom socket error for hostname=${chalkString(hostname)}`);
         reject(err);
       });
+    });
+  }
+  private scheduleReconnect(): void {
+    const { hostname, retryOnClose } = this.config;
+    if (!retryOnClose || this.isExiting) {
+      return;
+    }
+    // Clear any pending timers
+    if (this.retrySuccessTimeout) {
+      clearTimeout(this.retrySuccessTimeout);
+      this.retrySuccessTimeout = undefined;
+    }
+    if (this.reconnectTimeout) {
+      debug(`Removing existing reconnect timeout`);
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = undefined;
+    }
+    setImmediate(() => {
+      this.attemptCount += 1;
+      const actualReconnectTimeout = Math.max(1000, calculateDelay({ attemptCount: this.attemptCount }));
+      debug(
+        `Configuring socket reconnection timeout of ~${chalkNumber(Math.round(actualReconnectTimeout / 1000))}s`,
+      );
+      this.reconnectTimeout = setTimeout(() => {
+        debug(
+          `About to attempt to reconnect to hostname=${chalkString(hostname)} for the ${chalkNumber(
+            this.attemptCount,
+          )}-th time ...`,
+        );
+        this.connect()
+          .then(() => {
+            // Only start the success timeout after connect() actually resolves
+            this.retrySuccessTimeout = setTimeout(() => {
+              if (this.socket?.readyState === WebSocket.OPEN) {
+                debug(
+                  `Reconnection to hostname=${chalkString(hostname)} for the ${chalkNumber(
+                    this.attemptCount,
+                  )}-th time was successful (> 60s), will reset \`attemptCount\``,
+                );
+                this.attemptCount = 0;
+              }
+            }, 60 * 1000);
+          })
+          .catch((err: unknown) => {
+            const message = err instanceof Error ? err.message : String(err);
+            debug(
+              `Failed attempt to reconnect to hostname=${chalkString(hostname)} with err=${chalkString(
+                message,
+              )} for the ${chalkNumber(this.attemptCount)}-th time!`,
+            );
+            // Re-schedule reconnect — no socket was created so no close event will fire
+            this.scheduleReconnect();
+          });
+      }, actualReconnectTimeout);
     });
   }
   public close(): void {
