@@ -6,7 +6,7 @@ import { assert } from "./utils/assert";
 import { calculateDelay } from "./utils/async";
 import { chalkJson, chalkNumber, chalkString } from "./utils/chalk";
 import { debounce } from "./utils/debounce";
-import debug, { dir, toHexString } from "./utils/debug";
+import debug, { dir, redactSecrets, toHexString } from "./utils/debug";
 import {
   buildRawHttpRequest,
   BuildRawHttpRequestOptions,
@@ -163,7 +163,7 @@ export default class TydomClient extends EventEmitter<TydomClientEvents> {
             }
             debug(
               `Parsed ${chalkNumber(data.length)}-sized received message as ${chalk.blue(type)}:\n${chalk.gray(
-                data.toString("utf8"),
+                redactSecrets(data.toString("utf8")),
               )}`,
             );
             const requestId = (parsedMessage as TydomHttpMessage).headers.get("transac-id") ?? "";
@@ -310,7 +310,7 @@ export default class TydomClient extends EventEmitter<TydomClientEvents> {
     const rawHttpRequest = buildRawHttpRequest({ url, method, headers, body });
     debug(
       `Writing ${chalkNumber(rawHttpRequest.length)}-sized request on Tydom socket:\n${chalk.gray(
-        rawHttpRequest.replace(/\r\n/g, "\\r\\n"),
+        redactSecrets(rawHttpRequest).replace(/\r\n/g, "\\r\\n"),
       )}`,
     );
     return new Promise((resolve, reject) => {
@@ -320,7 +320,7 @@ export default class TydomClient extends EventEmitter<TydomClientEvents> {
       const timeout =
         requestTimeout > 0
           ? setTimeout(() => {
-              debug(`Timeout for request "${rawHttpRequest.replace(/\r\n/g, "\\r\\n")}"`);
+              debug(`Timeout for request "${redactSecrets(rawHttpRequest).replace(/\r\n/g, "\\r\\n")}"`);
               debug(`Closing the socket following request timeout to trigger a reconnection`);
               this.pool.delete(requestId);
               reject(new Error(`Request timed out after ${requestTimeout}ms`));
