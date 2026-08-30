@@ -20,9 +20,6 @@ importers:
       ws:
         specifier: ^8.18.3
         version: 8.18.3
-      yargs:
-        specifier: ^18.0.0
-        version: 18.0.0
     devDependencies:
       '@mgcrea/eslint-config-node':
         specifier: ^0.14.1
@@ -75,6 +72,9 @@ importers:
       vitest:
         specifier: ^4.0.16
         version: 4.0.16(@types/node@25.0.3)(tsx@4.21.0)
+      yargs:
+        specifier: ^18.0.0
+        version: 18.0.0
 
 packages:
 

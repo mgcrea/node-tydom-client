@@ -44,8 +44,7 @@
     "debug": "^4.4.3",
     "http-parser-js": "^0.5.10",
     "kolorist": "^1.8.0",
-    "ws": "^8.18.3",
-    "yargs": "^18.0.0"
+    "ws": "^8.18.3"
   },
   "devDependencies": {
     "@mgcrea/eslint-config-node": "^0.14.1",
@@ -64,7 +63,8 @@
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vite-tsconfig-paths": "^6.0.3",
-    "vitest": "^4.0.16"
+    "vitest": "^4.0.16",
+    "yargs": "^18.0.0"
   },
   "packageManager": "pnpm@10.26.1"
 }

@@ -24,8 +24,10 @@ export default defineConfig([
     sourcemap: true,
     target: "node20",
     tsconfig: "tsconfig.build.json",
-    esbuildOptions(options) {
-      options.packages = "external";
-    },
+    // Deliberately no `packages: "external"` here. yargs is only ever used by
+    // this CLI, so it is a devDependency and gets bundled into the binary
+    // instead — otherwise every library consumer installs yargs and its 12
+    // transitive packages for a command they never run. tsup's default keeps
+    // the real runtime dependencies (debug, ws, ...) external.
   },
 ]);
