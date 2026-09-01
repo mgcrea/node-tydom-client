@@ -1,4 +1,4 @@
-import { redactSecrets } from "src/utils/debug";
+import { redactSecrets } from "#utils/debug";
 import { describe, expect, it } from "vitest";
 
 /**
@@ -32,9 +32,12 @@ describe("redactSecrets", () => {
     expect(result).toContain('"value":"OFF"');
   });
 
-  it.each(["password", "passwd", "pin", "token", "secret", "apiKey"])("redacts a %s field", (field) => {
-    expect(redactSecrets(`{"${field}":"hunter2"}`)).toBe(`{"${field}":"[redacted]"}`);
-  });
+  it.each(["password", "passwd", "pin", "token", "secret", "apiKey"])(
+    "redacts a %s field",
+    (field) => {
+      expect(redactSecrets(`{"${field}":"hunter2"}`)).toBe(`{"${field}":"[redacted]"}`);
+    },
+  );
 
   it("is case-insensitive on the field name", () => {
     expect(redactSecrets('{"PWD":"000000"}')).toBe('{"PWD":"[redacted]"}');
@@ -45,7 +48,8 @@ describe("redactSecrets", () => {
   });
 
   it("redacts credential headers", () => {
-    const raw = "GET /ping HTTP/1.1\r\nAuthorization: Digest username=x, response=abc\r\ncontent-length: 0";
+    const raw =
+      "GET /ping HTTP/1.1\r\nAuthorization: Digest username=x, response=abc\r\ncontent-length: 0";
     const result = redactSecrets(raw);
     expect(result).not.toContain("response=abc");
     expect(result).toContain("Authorization: [redacted]");
@@ -64,7 +68,9 @@ describe("redactSecrets", () => {
   });
 
   it("redacts every occurrence, not just the first", () => {
-    expect(redactSecrets('[{"pwd":"111"},{"pwd":"222"}]')).toBe('[{"pwd":"[redacted]"},{"pwd":"[redacted]"}]');
+    expect(redactSecrets('[{"pwd":"111"},{"pwd":"222"}]')).toBe(
+      '[{"pwd":"[redacted]"},{"pwd":"[redacted]"}]',
+    );
   });
 
   it("leaves innocent payloads untouched", () => {

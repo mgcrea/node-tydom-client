@@ -1,15 +1,16 @@
 {
-  "extends": "@tsconfig/node20/tsconfig.json",
+  "extends": ["@tsconfig/node-lts/tsconfig.json", "@tsconfig/strictest/tsconfig.json"],
   "compilerOptions": {
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "outDir": "./dist",
+    "lib": ["ES2023"],
+    "module": "Preserve",
+    "moduleResolution": "bundler",
+    "target": "ES2023",
     "noEmit": true,
-    "baseUrl": ".",
-    "paths": {
-      "src/*": ["./src/*"],
-      "test/*": ["./test/*"]
-    }
+    "verbatimModuleSyntax": true,
+    "resolveJsonModule": true,
+    "types": ["node"],
+    "rootDir": ".",
+    "outDir": "dist"
   },
-  "include": ["src/", "test/", "*.config.js", "*.config.ts"]
+  "include": ["src/**/*.ts", "test/**/*.ts", "*.config.ts"]
 }
