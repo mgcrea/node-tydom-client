@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+# Nothing here writes to the repo; the token only needs to read the tree.
+permissions:
+  contents: read
+
+# A push that supersedes an in-flight run for the same ref makes the older run
+# irrelevant. Keep master serialised so its history stays checked in order.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [22, 24, 26]
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      # Before setup-node: `cache: pnpm` needs the pnpm binary to resolve the
+      # store path. Version comes from package.json's `packageManager`.
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Kept as discrete steps rather than one `pnpm test` so a failure is
+      # identifiable from the job summary without opening the log.
+      - run: pnpm run lint
+      - run: pnpm run check
+      - run: pnpm run format:check
+      - run: pnpm run spec
+      - run: pnpm run build
