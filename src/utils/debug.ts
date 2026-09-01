@@ -1,4 +1,4 @@
-import console from "console";
+import console from "node:console";
 import createDebug from "debug";
 import { name } from "./../../package.json";
 
@@ -14,7 +14,8 @@ export const REDACTED = "[redacted]";
  * `pwd` is the one that matters in practice: every alarm arm, disarm and zone
  * command carries the user's PIN in the request body.
  */
-const SECRET_JSON_FIELD = /("(?:pwd|password|passwd|pin|token|secret|apiKey)"\s*:\s*)"(?:[^"\\]|\\.)*"/gi;
+const SECRET_JSON_FIELD =
+  /("(?:pwd|password|passwd|pin|token|secret|apiKey)"\s*:\s*)"(?:[^"\\]|\\.)*"/gi;
 
 /** Request headers that carry credentials, matched at a CRLF or line start. */
 const SECRET_HEADER = /(^|\r\n|\n)((?:proxy-)?authorization|cookie|set-cookie)(\s*:\s*)[^\r\n]*/gi;

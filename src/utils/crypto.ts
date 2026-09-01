@@ -1,6 +1,7 @@
-import crypto from "crypto";
+import crypto from "node:crypto";
 
-export const md5Sync = (data: crypto.BinaryLike): Buffer => crypto.createHash("md5").update(data).digest();
+export const md5Sync = (data: crypto.BinaryLike): Buffer =>
+  crypto.createHash("md5").update(data).digest();
 export const md5 = (data: crypto.BinaryLike): Promise<Buffer> =>
   new Promise((resolve, reject) => {
     try {
