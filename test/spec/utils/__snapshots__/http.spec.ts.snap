@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`parseIncomingMessage > should properly parse a getInfoResponse response 1`] = `
+exports[`parseIncomingMessage > should properly parse a getInfoResponse response > getInfoResponse keys 1`] = `
 [
   "type",
   "uri",
@@ -12,7 +12,7 @@ exports[`parseIncomingMessage > should properly parse a getInfoResponse response
 ]
 `;
 
-exports[`parseIncomingMessage > should properly parse a getInfoResponse response 2`] = `
+exports[`parseIncomingMessage > should properly parse a getInfoResponse response > getInfoResponse message 1`] = `
 {
   "body": {
     "TYDOM.dat": 1,
@@ -75,7 +75,7 @@ exports[`parseIncomingMessage > should properly parse a getInfoResponse response
 }
 `;
 
-exports[`parseIncomingMessage > should properly parse a updatedDevicesData response 1`] = `
+exports[`parseIncomingMessage > should properly parse a updatedDevicesData response > updatedDevicesData keys 1`] = `
 [
   "type",
   "uri",
@@ -87,7 +87,7 @@ exports[`parseIncomingMessage > should properly parse a updatedDevicesData respo
 ]
 `;
 
-exports[`parseIncomingMessage > should properly parse a updatedDevicesData response 2`] = `
+exports[`parseIncomingMessage > should properly parse a updatedDevicesData response > updatedDevicesData message 1`] = `
 {
   "body": [
     {

@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`client > should properly create a client 1`] = `
+exports[`client > should properly create a client > client keys 1`] = `
 [
   "_events",
   "_eventsCount",
@@ -19,7 +19,7 @@ exports[`client > should properly create a client 1`] = `
 ]
 `;
 
-exports[`client > should properly create a client 2`] = `
+exports[`client > should properly create a client > client values 1`] = `
 [
   {},
   0,
