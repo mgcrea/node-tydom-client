@@ -1,8 +1,8 @@
-import { TydomClientOptions } from "../client";
+import type { TydomClientOptions } from "../client";
 import { assert } from "./assert";
 import { chalkKeyword, chalkString } from "./chalk";
-import debug from "./debug";
-import { DigestAccessAuthenticationFields, MessageType } from "./http";
+import { debug } from "./debug";
+import type { DigestAccessAuthenticationFields, MessageType } from "./http";
 
 export type TydomResponse = Record<string, unknown> | Record<string, unknown>[];
 
@@ -75,6 +75,12 @@ export const setupClient = (config: Required<TydomClientOptions>): Client => {
     const authFields = authFieldsSplit.reduce(
       (soFar: Partial<DigestAccessAuthenticationFields>, field: string) => {
         const [key, value] = field.split('="');
+        // A field that is not `key="value"` is not ours to interpret. Skipping
+        // it keeps a malformed challenge from throwing a TypeError here, which
+        // would surface as a crash rather than a failed login.
+        if (key === undefined || value === undefined) {
+          return soFar;
+        }
         soFar[key.trim() as keyof DigestAccessAuthenticationFields] = value.slice(0, -1);
         return soFar;
       },

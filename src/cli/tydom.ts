@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
-process.env.DEBUG = `${process.env.DEBUG} tydom-client`.trim();
+process.env["DEBUG"] = `${process.env["DEBUG"]} tydom-client`.trim();
 
-import { promises as fs } from "fs";
+import { promises as fs } from "node:fs";
 import * as chalk from "kolorist";
-import { resolve } from "path";
+import { resolve } from "node:path";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { createClient } from "../client";
@@ -55,9 +55,9 @@ const performRequest = async (argv: TydomRequestCommandOptions): Promise<void> =
   const [, ...extraUris] = args;
   const uris = [uri, ...extraUris];
   log(`Performing ${uris.length} request(s) to "${hostname}"...`);
-  const results = await uris.reduce<Promise<TydomResult>>(async (promiseSoFar, uri) => {
+  const results = await uris.reduce<Promise<TydomResult>>(async (promiseSoFar, nextUri) => {
     const soFar = await promiseSoFar;
-    log(`Performing ${method} request to "${uri}"...`);
+    log(`Performing ${method} request to "${nextUri}"...`);
     if (command) {
       soFar[uri] = await client.command(uri);
     } else if (method === "GET") {
@@ -135,8 +135,8 @@ await yargs(hideBin(process.argv))
   .command<TydomRequestCommandOptions>(
     "request [uri]",
     "request tydom",
-    (yargs) => {
-      yargs
+    (command) => {
+      command
         .example("$0 request /info --file info.json", "")
         .positional("uri", {
           type: "string",
@@ -159,8 +159,8 @@ await yargs(hideBin(process.argv))
   .command<TydomListenCommandOptions>(
     "listen",
     "listen tydom",
-    (yargs) => {
-      yargs.example("$0 listen", "");
+    (command) => {
+      command.example("$0 listen", "");
     },
     listenCommand,
   )

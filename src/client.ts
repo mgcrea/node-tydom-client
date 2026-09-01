@@ -1,19 +1,20 @@
-import { EventEmitter } from "events";
+import { EventEmitter } from "node:events";
 import * as chalk from "kolorist";
-import WebSocket from "ws";
+import { WebSocket } from "ws";
 import { USER_AGENT } from "./config/env";
 import { assert } from "./utils/assert";
 import { calculateDelay } from "./utils/async";
 import { chalkJson, chalkNumber, chalkString } from "./utils/chalk";
 import { debounce } from "./utils/debounce";
-import debug, { dir, redactSecrets, toHexString } from "./utils/debug";
+import { debug, dir, redactSecrets, toHexString } from "./utils/debug";
+import type { BuildRawHttpRequestOptions } from "./utils/http";
 import {
   buildRawHttpRequest,
-  BuildRawHttpRequestOptions,
   computeDigestAccessAuthenticationHeader,
   parseIncomingMessage,
 } from "./utils/http";
-import { Client, setupClient, TydomHttpMessage, TydomResponse } from "./utils/tydom";
+import type { Client, TydomBinaryMessage, TydomHttpMessage, TydomResponse } from "./utils/tydom";
+import { setupClient } from "./utils/tydom";
 
 export type TydomRequestBody = Record<string, unknown> | Record<string, unknown>[];
 
@@ -68,7 +69,17 @@ export type TydomClientEvents = {
   connect: [];
   disconnect: [];
   message: [TydomHttpMessage];
-  // [key: string]: [TydomHttpMessage | TydomBinaryMessage];
+};
+
+// A command awaiting follow-up frames listens on its own requestId, so that
+// event name only exists at runtime and cannot be spelled in the map above.
+// Adding an index signature for it widens `keyof` and drags `connect`,
+// `disconnect` and `message` down to `unknown[]` for every consumer, so the
+// relay goes through this loose view of the same emitter instead — the cast
+// stays in the two private helpers below and nowhere else.
+type RelayEmitter = {
+  emit: (requestId: string, message: TydomHttpMessage | TydomBinaryMessage) => void;
+  on: (requestId: string, listener: (message: TydomHttpMessage) => void) => void;
 };
 
 export default class TydomClient extends EventEmitter<TydomClientEvents> {
@@ -78,9 +89,14 @@ export default class TydomClient extends EventEmitter<TydomClientEvents> {
   private lastUniqueId = 0;
   private attemptCount = 0;
   private pool = new Map<string, ResponseHandler>();
-  private keepAliveInterval?: NodeJS.Timeout;
-  private reconnectTimeout?: NodeJS.Timeout;
-  private retrySuccessTimeout?: NodeJS.Timeout;
+  // Assigned `undefined` on clear, so the union is explicit rather than an
+  // optional property — `exactOptionalPropertyTypes` distinguishes the two.
+  private keepAliveInterval: NodeJS.Timeout | undefined;
+  private reconnectTimeout: NodeJS.Timeout | undefined;
+  private retrySuccessTimeout: NodeJS.Timeout | undefined;
+  private get relay(): RelayEmitter {
+    return this as unknown as RelayEmitter;
+  }
   constructor(options: TydomClientOptions) {
     super();
     this.config = { ...defaultOptions, ...options };
@@ -95,16 +111,8 @@ export default class TydomClient extends EventEmitter<TydomClientEvents> {
     return `${nextUniqueId}`;
   }
   public async connect(): Promise<WebSocket> {
-    const {
-      username,
-      password,
-      hostname,
-      userAgent,
-      keepAlive,
-      closeOnExit,
-      keepAliveInterval,
-      retryOnClose,
-    } = this.config;
+    const { username, password, hostname, userAgent, keepAlive, closeOnExit, keepAliveInterval } =
+      this.config;
     const isRemote = hostname === "mediation.tydom.com";
     // Http Login
     const { uri, realm, nonce, qop } = await this.client.login();
@@ -133,7 +141,9 @@ export default class TydomClient extends EventEmitter<TydomClientEvents> {
           );
           this.keepAliveInterval = setInterval(() => {
             this.get("/ping").catch((err: unknown) => {
-              debug(`Failed to ping hostname=${chalkString(hostname)} with err=${chalkString(err)}`);
+              debug(
+                `Failed to ping hostname=${chalkString(hostname)} with err=${chalkString(err)}`,
+              );
             });
           }, actualKeepAliveInterval);
         }
@@ -151,7 +161,9 @@ export default class TydomClient extends EventEmitter<TydomClientEvents> {
         );
         void (async () => {
           try {
-            const parsedMessage = await parseIncomingMessage(isRemote ? data.subarray("\x02".length) : data);
+            const parsedMessage = await parseIncomingMessage(
+              isRemote ? data.subarray("\x02".length) : data,
+            );
             const { type } = parsedMessage;
             if (type === "binary") {
               debug(
@@ -185,7 +197,7 @@ export default class TydomClient extends EventEmitter<TydomClientEvents> {
               this.emit("message", parsedMessage as TydomHttpMessage);
               // Dynamic requestId relay for specific command requests
               if (requestId) {
-                this.emit(requestId, parsedMessage);
+                this.relay.emit(requestId, parsedMessage);
               }
             }
           } catch (err) {
@@ -237,7 +249,10 @@ export default class TydomClient extends EventEmitter<TydomClientEvents> {
     }
     setImmediate(() => {
       this.attemptCount += 1;
-      const actualReconnectTimeout = Math.max(1000, calculateDelay({ attemptCount: this.attemptCount }));
+      const actualReconnectTimeout = Math.max(
+        1000,
+        calculateDelay({ attemptCount: this.attemptCount }),
+      );
       debug(
         `Configuring socket reconnection timeout of ~${chalkNumber(Math.round(actualReconnectTimeout / 1000))}s`,
       );
@@ -247,8 +262,9 @@ export default class TydomClient extends EventEmitter<TydomClientEvents> {
             this.attemptCount,
           )}-th time ...`,
         );
-        this.connect()
-          .then(() => {
+        void (async () => {
+          try {
+            await this.connect();
             // Only start the success timeout after connect() actually resolves
             this.retrySuccessTimeout = setTimeout(() => {
               if (this.socket?.readyState === WebSocket.OPEN) {
@@ -260,8 +276,7 @@ export default class TydomClient extends EventEmitter<TydomClientEvents> {
                 this.attemptCount = 0;
               }
             }, 60 * 1000);
-          })
-          .catch((err: unknown) => {
+          } catch (err: unknown) {
             const message = err instanceof Error ? err.message : String(err);
             debug(
               `Failed attempt to reconnect to hostname=${chalkString(hostname)} with err=${chalkString(
@@ -270,7 +285,8 @@ export default class TydomClient extends EventEmitter<TydomClientEvents> {
             );
             // Re-schedule reconnect — no socket was created so no close event will fire
             this.scheduleReconnect();
-          });
+          }
+        })();
       }, actualReconnectTimeout);
     });
   }
@@ -285,8 +301,14 @@ export default class TydomClient extends EventEmitter<TydomClientEvents> {
     this.socket.close();
   }
   send(rawHttpRequest: string): void {
-    assert(this.socket instanceof WebSocket, "Required socket instance, please use connect() first");
-    if (this.socket.readyState === WebSocket.CLOSING || this.socket.readyState === WebSocket.CLOSED) {
+    assert(
+      this.socket instanceof WebSocket,
+      "Required socket instance, please use connect() first",
+    );
+    if (
+      this.socket.readyState === WebSocket.CLOSING ||
+      this.socket.readyState === WebSocket.CLOSED
+    ) {
       debug(
         `Closed/closing socket instance, readyState=${this.socket.readyState} for request="${rawHttpRequest}"`,
       );
@@ -320,7 +342,9 @@ export default class TydomClient extends EventEmitter<TydomClientEvents> {
       const timeout =
         requestTimeout > 0
           ? setTimeout(() => {
-              debug(`Timeout for request "${redactSecrets(rawHttpRequest).replace(/\r\n/g, "\\r\\n")}"`);
+              debug(
+                `Timeout for request "${redactSecrets(rawHttpRequest).replace(/\r\n/g, "\\r\\n")}"`,
+              );
               debug(`Closing the socket following request timeout to trigger a reconnection`);
               this.pool.delete(requestId);
               reject(new Error(`Request timed out after ${requestTimeout}ms`));
@@ -377,15 +401,15 @@ export default class TydomClient extends EventEmitter<TydomClientEvents> {
         cleanup();
         resolve(results);
       }, requestTimeout * 3);
-      this.on(requestId, ({ body }: TydomHttpMessage) => {
+      this.relay.on(requestId, ({ body }) => {
         const bodyArray = body as Record<string, unknown>[];
-        const endpoints = bodyArray[0]?.endpoints as Record<string, unknown>[] | undefined;
-        const cdataArray = endpoints?.[0]?.cdata as Record<string, unknown>[] | undefined;
+        const endpoints = bodyArray[0]?.["endpoints"] as Record<string, unknown>[] | undefined;
+        const cdataArray = endpoints?.[0]?.["cdata"] as Record<string, unknown>[] | undefined;
         const cdata = cdataArray?.[0];
-        const values = cdata?.values as T | undefined;
+        const values = cdata?.["values"] as T | undefined;
         if (values) {
           results.push(values);
-        } else if (cdata && !cdata.EOR) {
+        } else if (cdata && !cdata["EOR"]) {
           // Only warn if it's not an End-Of-Response marker
           debug(`Unexpected command follow-up body="${chalkJson(body)}"`);
         }

@@ -2,7 +2,8 @@
 import { HTTPParser } from "http-parser-js";
 import { assert } from "./assert";
 import { getRandomBytes, getRequestCounter, md5 } from "./crypto";
-import { castTydomMessage, TydomBinaryMessage, TydomHttpMessage } from "./tydom";
+import type { TydomBinaryMessage, TydomHttpMessage } from "./tydom";
+import { castTydomMessage } from "./tydom";
 
 const requestParser = new HTTPParser(HTTPParser.REQUEST);
 const responseParser = new HTTPParser(HTTPParser.RESPONSE);
@@ -12,7 +13,9 @@ const REQUEST_REGEX = /^([A-Z-]+) ([^ ]+) HTTP\/(\d)\.(\d)$/;
 const RESPONSE_REGEX = /^HTTP\/(\d)\.(\d) (\d{3}) ?(.*)$/;
 
 export type MessageType = "response" | "request" | "binary";
-export const getMessageType = (data: Buffer): { type: MessageType; matches: RegExpMatchArray | null } => {
+export const getMessageType = (
+  data: Buffer,
+): { type: MessageType; matches: RegExpMatchArray | null } => {
   const firstLine = data.subarray(0, data.indexOf("\r\n")).toString("ascii");
   if (RESPONSE_REGEX.test(firstLine)) {
     return { type: "response", matches: RESPONSE_REGEX.exec(firstLine) };
@@ -23,7 +26,9 @@ export const getMessageType = (data: Buffer): { type: MessageType; matches: RegE
   return { type: "binary", matches: null };
 };
 
-export const parseIncomingMessage = async (data: Buffer): Promise<TydomBinaryMessage | TydomHttpMessage> => {
+export const parseIncomingMessage = async (
+  data: Buffer,
+): Promise<TydomBinaryMessage | TydomHttpMessage> => {
   return new Promise((resolve, reject) => {
     try {
       const { type: messageType, matches: messageMatches } = getMessageType(data);
@@ -62,15 +67,26 @@ export const parseIncomingMessage = async (data: Buffer): Promise<TydomBinaryMes
           case "response": {
             const method = null;
             const uri = headers.get("uri-origin") ?? "/";
-            const status = parseInt(messageMatches[3], 10);
-            resolve(castTydomMessage({ type: messageType, method, uri, status, body, headers, date }));
+            // RESPONSE_REGEX only matches with all four groups present, so this
+            // holds for anything getMessageType classified as a response.
+            const rawStatus = messageMatches[3];
+            assert(rawStatus, "Unexpected response status line without a status code");
+            const status = parseInt(rawStatus, 10);
+            resolve(
+              castTydomMessage({ type: messageType, method, uri, status, body, headers, date }),
+            );
             return;
           }
           case "request": {
+            // As above: REQUEST_REGEX cannot match without a method and a URI.
             const method = messageMatches[1];
             const uri = messageMatches[2];
+            assert(method, "Unexpected request line without a method");
+            assert(uri, "Unexpected request line without a URI");
             const status = null;
-            resolve(castTydomMessage({ type: messageType, method, uri, status, body, headers, date }));
+            resolve(
+              castTydomMessage({ type: messageType, method, uri, status, body, headers, date }),
+            );
             return;
           }
           default: {
